@@ -1,0 +1,2 @@
+1. eval "$(/shares/ziti-opt/software/anaconda3/bin/conda shell.bash hook)"
+2. anaconda-navigator
