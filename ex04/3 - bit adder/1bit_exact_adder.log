@@ -1,0 +1,74 @@
+Circuit: * D:\Master\Emerging_Computing\epcExercise\ex04\1 - bit adder\1-bit adder\1-bit adder\1bit_exact_adder.asc
+
+V15: Removing PWL point (1e-009,0)
+V15: Removing PWL point (0.00021,0)
+V15: Removing PWL point (0.0003,0)
+V15: Removing PWL point (0.00039,0)
+V15: Removing PWL point (0.00048,1)
+V15: Removing PWL point (0.00057,0)
+V14: Removing PWL point (0.00018,0)
+V14: Removing PWL point (0.0003,1)
+V14: Removing PWL point (0.00048,0)
+V13: Removing PWL point (1e-009,0)
+V13: Removing PWL point (0.00033,1)
+V13: Removing PWL point (0.00039,0)
+V13: Removing PWL point (0.00057,1)
+V12: Removing PWL point (1e-009,0)
+V12: Removing PWL point (0.00012,1)
+V12: Removing PWL point (0.00018,0)
+V12: Removing PWL point (0.00027,0)
+V12: Removing PWL point (0.00054,1)
+V12: Removing PWL point (0.0006,0)
+V10: Removing PWL point (1e-009,0)
+V10: Removing PWL point (0.00012,0)
+V10: Removing PWL point (0.00018,1)
+V10: Removing PWL point (0.0003,0)
+V10: Removing PWL point (0.00039,1)
+V10: Removing PWL point (0.00048,0)
+V10: Removing PWL point (0.00063,0)
+V5: Removing PWL point (1e-009,0)
+V5: Removing PWL point (0.00039,0)
+V4: Removing PWL point (1e-009,0)
+V4: Removing PWL point (0.00021,0)
+V4: Removing PWL point (0.0003,0)
+V4: Removing PWL point (0.00039,0)
+V4: Removing PWL point (0.00051,1)
+V4: Removing PWL point (0.00057,0)
+V3: Removing PWL point (1e-009,0)
+V3: Removing PWL point (0.00018,0)
+V3: Removing PWL point (0.00027,0)
+V3: Removing PWL point (0.00054,0.9)
+V3: Removing PWL point (0.0006,0)
+V2: Removing PWL point (0.00018,0)
+V2: Removing PWL point (0.00048,0)
+V1: Removing PWL point (1e-009,0)
+V1: Removing PWL point (0.00012,0)
+V1: Removing PWL point (0.00024,1)
+V1: Removing PWL point (0.0003,0)
+V1: Removing PWL point (0.00048,0)
+V1: Removing PWL point (0.00063,0)
+WARNING: Less than two connections to node A1.  This node is used by E:X8:1.
+WARNING: Less than two connections to node B1.  This node is used by E:X1:1.
+WARNING: Less than two connections to node C.  This node is used by E:X2:1.
+WARNING: Less than two connections to node S1.  This node is used by E:X3:1.
+WARNING: Less than two connections to node S2.  This node is used by E:X4:1.
+Direct Newton iteration for .op point succeeded.
+
+Date: Wed Dec 06 14:21:00 2023
+Total elapsed time: 0.423 seconds.
+
+tnom = 27
+temp = 27
+method = modified trap
+totiter = 4575
+traniter = 4572
+tranpoints = 1751
+accept = 1633
+rejected = 118
+matrix size = 76
+fillins = 5
+solver = Normal
+Thread vector: 37.6/22.3[2] 1.9/4.5[1] 6.7/6.0[2] 0.7/8.0[1]  2592/500
+Matrix Compiler1: 2.35 KB object code size  2.1/1.2/[0.7]
+Matrix Compiler2: 4.63 KB object code size  1.1/2.4/[0.8]
+

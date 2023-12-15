@@ -1,0 +1,30 @@
+Circuit: * D:\Master\Emerging_Computing\epcExercise\ex04\Draft1.asc
+
+V4: Removing PWL point (0.00015,1)
+V4: Removing PWL point (0.00027,1)
+V3: Removing PWL point (1e-009,0)
+V3: Removing PWL point (6e-005,1)
+V3: Removing PWL point (0.00021,1)
+V1: Removing PWL point (1e-009,0)
+V1: Removing PWL point (9e-005,1)
+WARNING: Less than two connections to node A.  This node is used by E:X1:1.
+WARNING: Less than two connections to node B.  This node is used by E:X2:1.
+Direct Newton iteration for .op point succeeded.
+
+Date: Wed Dec 06 14:40:27 2023
+Total elapsed time: 0.357 seconds.
+
+tnom = 27
+temp = 27
+method = modified trap
+totiter = 2746
+traniter = 2743
+tranpoints = 1264
+accept = 1236
+rejected = 28
+matrix size = 31
+fillins = 2
+solver = Normal
+Matrix Compiler1: 964 bytes object code size  0.6/0.3/[0.2]
+Matrix Compiler2: 1.88 KB object code size  0.4/0.7/[0.3]
+
