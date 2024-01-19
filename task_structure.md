@@ -5,3 +5,9 @@ Options:\
 - Multi-layer-perceptron
 - ResNet
 - VGG
+
+
+Framework: Tensorflow, LeNet is already in Tensorflow, although terribly slow, and the custom operator api is a little more approachable.
+
+ResNet18 \
+Go through the idea of implementing the 8bit addition inexact with Chatgpt
