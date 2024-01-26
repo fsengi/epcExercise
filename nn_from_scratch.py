@@ -165,22 +165,120 @@ def convolution2d(image, kernel):
     
     return output
 
+
+def conv2d(image, kernel, stride=1, padding=0, bias=None):
+    # Get dimensions of the image and kernel
+    image_height, image_width = image.shape
+    kernel_height, kernel_width = kernel.shape
+    
+    # Calculate the output dimensions
+    output_height = (image_height - kernel_height + 2 * padding) // stride + 1
+    output_width = (image_width - kernel_width + 2 * padding) // stride + 1
+    
+    # Initialize the output feature map
+    output = np.zeros((output_height, output_width))
+    
+    # Apply padding to the input image
+    image_padded = np.pad(image, ((padding, padding), (padding, padding)), mode='constant')
+    
+    # Perform the convolution with stride
+    for i in range(0, output_height, stride):
+        for j in range(0, output_width, stride):
+            # Extract the region of interest (ROI) from the padded image
+            roi = image_padded[i:i+kernel_height, j:j+kernel_width]
+
+            # Initialize the accumulator for the current position in the output
+            accumulator = 0
+            
+            # Perform element-wise multiplication and accumulate
+            for m in range(kernel_height):
+                for n in range(kernel_width):
+                    #accumulator += roi[m, n] * kernel[m, n]
+                    #accumulator = accumulator + (roi[m, n] * kernel[m, n])
+                    #accumulator = np.add(accumulator, (roi[m, n] * kernel[m, n]))
+                    #accumulator = MyWrapper(accumulator, (roi[m, n] * kernel[m, n]))
+                    accumulator = MyWrapper(accumulator, Mult_by_add(roi[m, n], kernel[m, n]))
+            
+            # Add bias if provided
+            if bias is not None:
+                accumulator += bias
+            
+            # Store the result in the output feature map
+            # print(accumulator)
+            # print(type(accumulator))
+            # print(accumulator[0])
+            output[i//stride, j//stride] = int(accumulator[0])
+    
+    return output
+
+# # Example usage
+# image = np.array([[3, 3, 3],
+#                   [3, 3, 3],
+#                   [3, 3, 3]])
+
+# kernel = np.array([[5, 3],
+#                    [1, -1]])
+
+# result = conv2d(image, kernel)
+# print("Original Image:")
+# print(image)
+# print("\nKernel:")
+# print(kernel)
+# print("\nResult of Convolution:")
+# print(result)
+# h = -100
+# t = -1
+# print(h * t)
+# print(Mult_by_add(t,h))
+
+
+def relu(x):
+    return np.maximum(0, x)
+
+def softmax(x):
+    exp_x = np.exp(x - np.max(x))
+    return exp_x / exp_x.sum(axis=0, keepdims=True)
+
+def initialize_weights(shape):
+    return np.random.randint(-6, 6, size=shape)
+
+def initialize_bias(shape):
+    return np.zeros(shape, dtype=int)
+
+def simple_convolutional_net(input_image):
+    # Define the architecture
+    W1 = initialize_weights((3, 3))
+    b1 = initialize_bias(1)
+    W2 = initialize_weights((3, 3))
+    b2 = initialize_bias(1)
+    W3 = initialize_weights((3, 3))
+    b3 = initialize_bias(1)
+    # print(W1,b1,W2,b2,W3,b3)
+    
+    # Forward pass
+    conv1 = conv2d(input_image, W1, bias=b1)
+    relu1 = relu(conv1)
+    
+    conv2 = conv2d(relu1, W2, bias=b2)
+    relu2 = relu(conv2)
+    
+    conv3 = conv2d(relu2, W3, bias=b3)
+    relu3 = relu(conv3)
+    
+    # Flatten the output for fully connected layer
+    flattened_output = relu3.flatten()
+    
+    # Fully connected layer
+    fc_weights = initialize_weights((flattened_output.shape[0], 10))
+    fc_bias = initialize_bias(10)
+    fc_output = np.dot(flattened_output, fc_weights) + fc_bias
+    
+    # Apply softmax for classification
+    output_probabilities = softmax(fc_output)
+    
+    return output_probabilities
+
 # Example usage
-image = np.array([[3, 3, 3],
-                  [3, 3, 3],
-                  [3, 3, 3]])
-
-kernel = np.array([[2, 3],
-                   [1, -1]])
-
-result = convolution2d(image, kernel)
-print("Original Image:")
-print(image)
-print("\nKernel:")
-print(kernel)
-print("\nResult of Convolution:")
-print(result)
-h = -23
-t = 0
-print(h * t)
-print(Mult_by_add(t,h))
+input_image = np.random.randint(-6, 6, size=(5, 5))
+output_probabilities = simple_convolutional_net(input_image)
+print("Output Probabilities:", output_probabilities)
