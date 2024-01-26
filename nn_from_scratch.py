@@ -104,9 +104,15 @@ def MyWrapper(a,b):
 
 def Mult_by_add(a,b):
     tmp = 0
-    for i in range(b):
+    for i in range(np.abs(b)):
         tmp = MyWrapper(tmp,a)
-    return tmp
+    if b > 0:
+        return tmp
+    elif b < 0:
+        return -tmp
+    else:
+        return 0
+    
 
 
 
@@ -150,7 +156,8 @@ def convolution2d(image, kernel):
                     #accumulator += roi[m, n] * kernel[m, n]
                     #accumulator = accumulator + (roi[m, n] * kernel[m, n])
                     #accumulator = np.add(accumulator, (roi[m, n] * kernel[m, n]))
-                    accumulator = MyWrapper(accumulator, (roi[m, n] * kernel[m, n]))
+                    #accumulator = MyWrapper(accumulator, (roi[m, n] * kernel[m, n]))
+                    accumulator = MyWrapper(accumulator, Mult_by_add(roi[m, n], kernel[m, n]))
 
             
             # Store the result in the output feature map
@@ -173,6 +180,7 @@ print("\nKernel:")
 print(kernel)
 print("\nResult of Convolution:")
 print(result)
-
-
-print(Mult_by_add(-4,24))
+h = -23
+t = 0
+print(h * t)
+print(Mult_by_add(t,h))
