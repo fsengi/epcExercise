@@ -77,7 +77,7 @@ def MyNbitAdder(a,b):
     total_sum   = 0
     
     #############################################
-    approx_until = 0 #change this if u want to approximate the first bits by an approximate adder
+    approx_until = 4 #change this if u want to approximate the first bits by an approximate adder
     #############################################
 
     #we want to do a bitwise addition
@@ -161,7 +161,11 @@ def convolution2d(image, kernel):
 
             
             # Store the result in the output feature map
-            output[i, j] = accumulator
+            # if (accumulator < 64):
+            #     output[i, j] = accumulator
+            # else:
+            #     output[i,j] = 63
+            output[i,j] = int(accumulator/2)
     
     return output
 
@@ -207,7 +211,7 @@ def conv2d(image, kernel, stride=1, padding=0, bias=None):
             # print(accumulator)
             # print(type(accumulator))
             # print(accumulator[0])
-            output[i//stride, j//stride] = int(accumulator[0])
+            output[i//stride, j//stride] = accumulator
     
     return output
 
@@ -231,16 +235,51 @@ def conv2d(image, kernel, stride=1, padding=0, bias=None):
 # print(h * t)
 # print(Mult_by_add(t,h))
 
+def max_pooling(input_array, pool_size=(2, 2)):
+    """
+    Applies max pooling to a 2D array.
+
+    Parameters:
+    - input_array: 2D numpy array
+    - pool_size: Tuple of two integers, specifying the size of the pooling window
+
+    Returns:
+    - 2D numpy array after max pooling
+    """
+    if len(input_array.shape) != 2:
+        raise ValueError("Input array must be 2D")
+
+    rows, cols = input_array.shape
+    pool_rows, pool_cols = pool_size
+
+    # Calculate the output shape after pooling
+    out_rows = rows // pool_rows
+    out_cols = cols // pool_cols
+
+    # Reshape the input array to facilitate pooling
+    reshaped_array = input_array[:out_rows * pool_rows, :out_cols * pool_cols].reshape(
+        out_rows, pool_rows, out_cols, pool_cols
+    )
+
+    # Apply max pooling along the specified axis
+    pooled_array = reshaped_array.max(axis=(1, 3))
+
+    return pooled_array
+
 
 def relu(x):
-    return np.maximum(0, x)
+    res = np.zeros((np.shape(x)[0], np.shape(x)[1]), dtype=int)
+    for i in range(np.shape(x)[0]):
+        for j in range(np.shape(x)[1]):
+            res[i,j] = np.maximum(0,x[i,j])
+    return res
 
 def softmax(x):
     exp_x = np.exp(x - np.max(x))
     return exp_x / exp_x.sum(axis=0, keepdims=True)
 
 def initialize_weights(shape):
-    return np.random.randint(-6, 6, size=shape)
+    return np.random.randint(-1, 2, size=shape, dtype=int)
 
 def initialize_bias(shape):
     return np.zeros(shape, dtype=int)
@@ -248,37 +287,80 @@ def initialize_bias(shape):
 def simple_convolutional_net(input_image):
     # Define the architecture
     W1 = initialize_weights((3, 3))
-    b1 = initialize_bias(1)
+    b1 = 0 #initialize_bias(1)
     W2 = initialize_weights((3, 3))
-    b2 = initialize_bias(1)
+    b2 = 0 # initialize_bias(1)
     W3 = initialize_weights((3, 3))
-    b3 = initialize_bias(1)
+    b3 = 0 #initialize_bias(1)
+    W4 = initialize_weights((3, 3))
     # print(W1,b1,W2,b2,W3,b3)
     
     # Forward pass
-    conv1 = conv2d(input_image, W1, bias=b1)
+    conv1 = convolution2d(input_image, W1)
     relu1 = relu(conv1)
+    # print(input_image)
+    print(np.max(input_image))
+    # print(relu1)
+    print(np.shape(relu1))
+    print(np.max(relu1))
+
+    relu1 = max_pooling(relu1)
     
-    conv2 = conv2d(relu1, W2, bias=b2)
+    conv2 = convolution2d(relu1,W2)
     relu2 = relu(conv2)
+
+
+    # print(relu2)
+    print(np.shape(relu2))
+    print(np.max(relu2))
+
+    relu2 = max_pooling(relu2)
     
-    conv3 = conv2d(relu2, W3, bias=b3)
+    conv3 = convolution2d(relu2,W3)
     relu3 = relu(conv3)
+
+    # print(relu2)
+    print(np.shape(relu3))
+    print(np.max(relu3))
+    
+    conv4 = convolution2d(relu3,W4)
+    relu4 = relu(conv4)
     
     # Flatten the output for fully connected layer
-    flattened_output = relu3.flatten()
+    flattened_output = relu4.flatten()
     
     # Fully connected layer
     fc_weights = initialize_weights((flattened_output.shape[0], 10))
-    fc_bias = initialize_bias(10)
-    fc_output = np.dot(flattened_output, fc_weights) + fc_bias
+    fc_output = np.dot(flattened_output, fc_weights)
     
     # Apply softmax for classification
     output_probabilities = softmax(fc_output)
     
     return output_probabilities
 
-# Example usage
-input_image = np.random.randint(-6, 6, size=(5, 5))
+#Example usage
+input_image = np.random.randint(-16, 15, size=(100,100))
 output_probabilities = simple_convolutional_net(input_image)
 print("Output Probabilities:", output_probabilities)
+
+# imi = initialize_weights((8,8))
+# Wt = initialize_weights((3,3))
+# print(Wt)
+# print(np.shape(Wt))
+
+
+# print(imi)
+# print(np.shape(imi))
+# residi = convolution2d(imi, Wt)
+# print(residi)
+# print(np.shape(residi))
+# residi0 = relu(residi)
+# print(residi0)
+# print(np.shape(residi0))
+# residi1 = convolution2d(residi0, Wt)
+# print(residi1)
+# print(np.shape(residi1))
+# residi2 = relu(residi1)
+# print(residi2)
+# print(np.shape(residi2))
+
