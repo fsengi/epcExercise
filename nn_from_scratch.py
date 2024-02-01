@@ -99,7 +99,10 @@ def MyNbitAdder(a,b):
 print(MyNbitAdder(512,512))
 
 def MyWrapper(a,b):
-    return MyNbitAdder(a+ 128,b+ 128)[0] - 256
+    if (((a + b) < 127) and ((a + b) > -128)):
+        return MyNbitAdder(a+ 128,b+ 128)[0] - 256
+    else:
+        return 127
 
 
 def Mult_by_add(a,b):
@@ -165,9 +168,62 @@ def convolution2d(image, kernel):
             #     output[i, j] = accumulator
             # else:
             #     output[i,j] = 63
-            output[i,j] = int(accumulator/2)
+            output[i,j] = accumulator #int(accumulator/2)
     
     return output
+
+def convolution2dpadding(image, kernel, padding):
+    # Get dimensions of the image and kernel
+    image_height, image_width = image.shape
+    kernel_height, kernel_width = kernel.shape
+    
+    # Calculate the output dimensions
+    output_height = (image_height - kernel_height + 2* padding) + 1
+    output_width = (image_width - kernel_width + 2* padding) + 1
+
+    print(np.shape(image))
+
+
+    # # Pad image
+    # tmp = np.zeros((output_height, output_width), dtype = int)
+    # for i in range(output_height)[padding:-padding]:
+    #     for j in range(output_width)[padding:-padding]:
+    #         tmp[i,j] = tmp[i,j] = image[i-padding, j-padding]
+    image_padded = np.pad(image, ((padding, padding), (padding, padding)), mode='constant')
+
+    image = image_padded
+    print(np.shape(image))
+    print(image)
+    
+    # Initialize the output feature map
+    output = np.zeros((output_height, output_width))
+    print(np.shape(output))
+    
+    # Perform the convolution
+    for i in range(output_height):
+        for j in range(output_width):
+            # Extract the region of interest (ROI) from the image
+            roi = image[i:i+kernel_height, j:j+kernel_width]
+            
+            # Initialize the accumulator for the current position in the output
+            accumulator = 0
+            
+            # Perform element-wise multiplication and accumulate
+            for m in range(kernel_height):
+                for n in range(kernel_width):
+                    #accumulator += roi[m, n] * kernel[m, n]
+                    #accumulator = accumulator + (roi[m, n] * kernel[m, n])
+                    #accumulator = np.add(accumulator, (roi[m, n] * kernel[m, n]))
+                    #accumulator = MyWrapper(accumulator, (roi[m, n] * kernel[m, n]))
+                    accumulator = MyWrapper(accumulator, Mult_by_add(roi[m, n], kernel[m, n]))
+
+            
+            # Store the result in the output feature map
+            # if (accumulator < 64):
+            #     output[i, j] = accumulator
+            # else:
+            #     output[i,j] = 63
+            output[i,j] = accumulator #int(accumulator/2)
 
 
 def conv2d(image, kernel, stride=1, padding=0, bias=None):
@@ -287,16 +343,13 @@ def initialize_bias(shape):
 def simple_convolutional_net(input_image):
     # Define the architecture
     W1 = initialize_weights((3, 3))
-    b1 = 0 #initialize_bias(1)
     W2 = initialize_weights((3, 3))
-    b2 = 0 # initialize_bias(1)
     W3 = initialize_weights((3, 3))
-    b3 = 0 #initialize_bias(1)
     W4 = initialize_weights((3, 3))
-    # print(W1,b1,W2,b2,W3,b3)
     
     # Forward pass
-    conv1 = convolution2d(input_image, W1)
+    #conv1 = convolution2d(input_image, W1)
+    conv1 = convolution2dpadding(input_image, W1, 2)
     relu1 = relu(conv1)
     # print(input_image)
     print(np.max(input_image))
@@ -339,7 +392,7 @@ def simple_convolutional_net(input_image):
     return output_probabilities
 
 #Example usage
-input_image = np.random.randint(-16, 15, size=(100,100))
+input_image = np.random.randint(-4, 3, size=(100,100))
 output_probabilities = simple_convolutional_net(input_image)
 print("Output Probabilities:", output_probabilities)
 
@@ -364,3 +417,23 @@ print("Output Probabilities:", output_probabilities)
 # print(residi2)
 # print(np.shape(residi2))
 
+# output_height = 10  # Replace 10 with the actual value of output_height
+# N = 2  # Replace 2 with the number of elements you want to exclude from the beginning and end
+
+# selected_elements = list(range(output_height))[N:-N]
+
+# print(selected_elements)
+
+# output_height = 12
+# output_width = 12
+# padding = 2
+# image = np.random.randint(-4, 3, size=(8,8))
+
+# print(image)
+
+# tmp = np.zeros((output_height, output_width))
+# for i in range(output_height)[padding:-padding]:
+#     for j in range(output_width)[padding:-padding]:
+#         tmp[i,j] = image[i-padding, j-padding]
+
+# print(tmp)
