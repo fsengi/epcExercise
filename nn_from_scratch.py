@@ -173,31 +173,27 @@ def convolution2d(image, kernel):
     return output
 
 def convolution2dpadding(image, kernel, padding):
+
+    image = np.pad(image, ((padding, padding), (padding, padding)), mode='constant')
+
+
     # Get dimensions of the image and kernel
     image_height, image_width = image.shape
     kernel_height, kernel_width = kernel.shape
     
     # Calculate the output dimensions
-    output_height = (image_height - kernel_height + 2* padding) + 1
-    output_width = (image_width - kernel_width + 2* padding) + 1
-
-    print(np.shape(image))
-
+    output_height = (image_height - kernel_height) + 1
+    output_width = (image_width - kernel_width) + 1
 
     # # Pad image
     # tmp = np.zeros((output_height, output_width), dtype = int)
     # for i in range(output_height)[padding:-padding]:
     #     for j in range(output_width)[padding:-padding]:
     #         tmp[i,j] = tmp[i,j] = image[i-padding, j-padding]
-    image_padded = np.pad(image, ((padding, padding), (padding, padding)), mode='constant')
 
-    image = image_padded
-    print(np.shape(image))
-    print(image)
     
     # Initialize the output feature map
     output = np.zeros((output_height, output_width))
-    print(np.shape(output))
     
     # Perform the convolution
     for i in range(output_height):
@@ -224,6 +220,7 @@ def convolution2dpadding(image, kernel, padding):
             # else:
             #     output[i,j] = 63
             output[i,j] = accumulator #int(accumulator/2)
+    return output
 
 
 def conv2d(image, kernel, stride=1, padding=0, bias=None):
