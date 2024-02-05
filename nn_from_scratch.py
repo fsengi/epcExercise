@@ -227,7 +227,7 @@ def convolution2dpadding(image, kernel, padding):
 
 
 
-def convolution2dpaddingstride(image, kernel, padding, stride):
+def convolution2dpaddingstride(image, kernel, stride, padding):
 
     #stride to bitshift
     if stride == 2:
@@ -237,7 +237,6 @@ def convolution2dpaddingstride(image, kernel, padding, stride):
 
     # Pad image
     image = np.pad(image, ((padding, padding), (padding, padding)), mode='constant')
-    print(np.shape(image))
 
     # Get dimensions of the image and kernel
     image_height, image_width = image.shape
@@ -246,7 +245,6 @@ def convolution2dpaddingstride(image, kernel, padding, stride):
     # Calculate the output dimensions using bitshifts
     output_height = ((image_height - kernel_height) >> shift) + 1
     output_width = ((image_width - kernel_width) >> shift )+ 1
-    print(output_height)
 
     # Initialize the output feature map
     output = np.zeros((output_height, output_width))
@@ -271,6 +269,40 @@ def convolution2dpaddingstride(image, kernel, padding, stride):
             output[(i >> shift), (j >> shift)] = accumulator
 
     return output
+
+
+def multichannelconv(in_channels, out_channels, image, kernel, stride, padding):
+
+    #stride to bitshift
+    if stride == 2:
+        shift = 1
+    else:
+        shift = 0
+
+    # print(shift)
+
+    # Get dimensions of the image and kernel
+    image_height, image_width = image[0].shape 
+    image_height += 2*padding
+    image_width += 2*padding
+    kernel_height, kernel_width = kernel[0].shape
+    # print(image[0].shape)
+    # print(kernel[0].shape)
+    # Calculate the output dimensions using bitshifts
+    output_height = ((image_height - kernel_height) >> shift) + 1
+    output_width = ((image_width - kernel_width) >> shift )+ 1
+
+    output_map = np.zeros(( out_channels, output_height, output_width))
+
+    for channel in range(in_channels):
+        # print(output_map[channel,:,:])
+        # print(image[channel,:,:])
+        # print(kernel[channel,:,:])
+        # print(convolution2dpaddingstride(image[channel], kernel[channel], stride, padding))
+        output_map[channel] = convolution2dpaddingstride(image[channel], kernel[channel], stride, padding)
+
+    return output_map
+
 
 
 
@@ -476,21 +508,25 @@ print("Output Probabilities:", output_probabilities)
 # output_width = 12
 padding = 2
 stride = 2
-#kernel = np.random.randint(-1, 0, size=(3,3))
-kernel = np.array([[2,0,0],
-                   [0,2,0],
-                   [1,0,2]], dtype=int)
+kernel = np.random.randint(-1, 0, size=(3,3,3))
+#kernel = np.array([[2,0,0],
+                #    [0,2,0],
+                #    [1,0,2]], dtype=int)
 #image = np.random.randint(-4, 3, size=(8,8))
-image = np.ones((8,8), dtype=int)
+image = np.ones((3,8,8), dtype=int)
 # print(kernel)
-# print(np.shape(image))
-# print(image)
-ref = convolution2dpadding(image, kernel, padding)
-rusi = convolution2dpaddingstride(image, kernel, padding, stride)
-print(np.shape(ref))
-print(ref)
-print(np.shape(rusi))
-print(rusi)
+print(np.shape(image))
+# print(image[0,:,:])
+# ref = convolution2dpadding(image, kernel, padding)
+# rusi = convolution2dpaddingstride(image, kernel, padding, stride)
+# print(np.shape(ref))
+# print(ref)
+# print(np.shape(rusi))
+# print(rusi)
+
+todo = multichannelconv(3,3,image, kernel, 2, 2)
+
+print(todo.shape)
 
 
 
