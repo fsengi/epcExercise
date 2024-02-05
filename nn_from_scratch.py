@@ -175,6 +175,7 @@ def convolution2d(image, kernel):
 def convolution2dpadding(image, kernel, padding):
 
     image = np.pad(image, ((padding, padding), (padding, padding)), mode='constant')
+    print(np.shape(image))
 
 
     # Get dimensions of the image and kernel
@@ -184,6 +185,7 @@ def convolution2dpadding(image, kernel, padding):
     # Calculate the output dimensions
     output_height = (image_height - kernel_height) + 1
     output_width = (image_width - kernel_width) + 1
+    print(output_height)
 
     # # Pad image
     # tmp = np.zeros((output_height, output_width), dtype = int)
@@ -221,6 +223,55 @@ def convolution2dpadding(image, kernel, padding):
             #     output[i,j] = 63
             output[i,j] = accumulator #int(accumulator/2)
     return output
+
+
+
+
+def convolution2dpaddingstride(image, kernel, padding, stride):
+
+    #stride to bitshift
+    if stride == 2:
+        shift = 1
+    else:
+        shift = 0
+
+    # Pad image
+    image = np.pad(image, ((padding, padding), (padding, padding)), mode='constant')
+    print(np.shape(image))
+
+    # Get dimensions of the image and kernel
+    image_height, image_width = image.shape
+    kernel_height, kernel_width = kernel.shape
+
+    # Calculate the output dimensions using bitshifts
+    output_height = ((image_height - kernel_height) >> shift) + 1
+    output_width = ((image_width - kernel_width) >> shift )+ 1
+    print(output_height)
+
+    # Initialize the output feature map
+    output = np.zeros((output_height, output_width))
+
+
+    # Perform the convolution with stride
+    for i in range(0, output_height * stride, stride):
+        for j in range(0, output_width * stride, stride):
+            # Extract the region of interest (ROI) from the image
+            roi = image[i:i+kernel_height, j:j+kernel_width]
+
+            # Initialize the accumulator for the current position in the output
+            accumulator = 0
+
+            # Perform element-wise multiplication and accumulate
+            for m in range(kernel_height):
+                for n in range(kernel_width):
+                    #accumulator += roi[m, n] * kernel[m, n]
+                    accumulator = MyWrapper(accumulator, Mult_by_add(roi[m, n], kernel[m, n]))
+
+            # Assign the accumulated value to the output
+            output[(i >> shift), (j >> shift)] = accumulator
+
+    return output
+
 
 
 def conv2d(image, kernel, stride=1, padding=0, bias=None):
@@ -423,10 +474,27 @@ print("Output Probabilities:", output_probabilities)
 
 # output_height = 12
 # output_width = 12
-# padding = 2
-# image = np.random.randint(-4, 3, size=(8,8))
-
+padding = 2
+stride = 2
+#kernel = np.random.randint(-1, 0, size=(3,3))
+kernel = np.array([[2,0,0],
+                   [0,2,0],
+                   [1,0,2]], dtype=int)
+#image = np.random.randint(-4, 3, size=(8,8))
+image = np.ones((8,8), dtype=int)
+# print(kernel)
+# print(np.shape(image))
 # print(image)
+ref = convolution2dpadding(image, kernel, padding)
+rusi = convolution2dpaddingstride(image, kernel, padding, stride)
+print(np.shape(ref))
+print(ref)
+print(np.shape(rusi))
+print(rusi)
+
+
+
+
 
 # tmp = np.zeros((output_height, output_width))
 # for i in range(output_height)[padding:-padding]:
