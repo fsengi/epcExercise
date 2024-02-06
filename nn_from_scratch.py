@@ -563,16 +563,16 @@ import torch.nn as nn
 
 # output_height = 12
 # output_width = 12
-padding = 4
-stride = 2
-kernel = np.random.randint(-1, 2, size=(1,3,3), dtype=int)
+padding = 1
+stride = 1
+kernel = np.random.randint(-2, 2, size=(1,9,9), dtype=int)
 #kernel = torch.randint(-1,2, size=(3, 2, 2), dtype=torch.int8)
 # print(kernel)
 #kernel = np.array([[2,0,0],
                 #    [0,2,0],
                 #    [1,0,2]], dtype=int)
-#image = np.random.randint(-4, 3, size=(8,8))
-image = np.random.randint(-8,9, size=(3,16,16), dtype=int)
+#image = np.random.randint(-4, 4, size=(8,8))
+image = np.random.randint(-4,5, size=(3,16,16), dtype=int)
 #image = torch.randint(-8,9, size=(3, 8, 8), dtype=torch.int8)
 # print(kernel)
 # print(np.shape(image))
