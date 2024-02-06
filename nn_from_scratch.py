@@ -289,8 +289,8 @@ def varchannel_conv(image, kernel, stride, padding):
 
     print(image_padded[0])
 
-    # Get dimensions of the image and kernel
-    image_height, image_width = image.shape[1], image.shape[2]
+    # Get dimensions of the padded image and kernel
+    image_height, image_width = image_padded.shape[1], image_padded.shape[2]
     kernel_height, kernel_width = kernel.shape[1], kernel.shape[2]
 
     # Calculate the output dimensions using bitshifts
@@ -563,7 +563,7 @@ import torch.nn as nn
 
 # output_height = 12
 # output_width = 12
-padding = 1
+padding = 4
 stride = 2
 kernel = np.random.randint(-1, 2, size=(1,3,3), dtype=int)
 #kernel = torch.randint(-1,2, size=(3, 2, 2), dtype=torch.int8)
