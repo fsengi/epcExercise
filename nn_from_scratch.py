@@ -271,6 +271,61 @@ def convolution2dpaddingstride(image, kernel, stride, padding):
     return output
 
 
+def varchannel_conv(image, kernel, stride, padding):
+
+    #stride to bitshift
+    if stride == 2:
+        shift = 1
+    else:
+        shift = 0
+
+    #Determine number of in_channels
+    in_channels = image.shape[0]
+
+    # Apply zero-padding to the input image on all in_channels
+    image_padded = np.zeros((in_channels, image.shape[1]+2*padding,image.shape[2]+2*padding), dtype=int)
+    for c in range(in_channels):
+        image_padded[c] = np.pad(image[c], ((padding, padding), (padding, padding)), mode='constant')
+
+    print(image_padded[0])
+
+    # Get dimensions of the image and kernel
+    image_height, image_width = image.shape[1], image.shape[2]
+    kernel_height, kernel_width = kernel.shape[1], kernel.shape[2]
+
+    # Calculate the output dimensions using bitshifts
+    output_height = ((image_height - kernel_height) >> shift) + 1
+    output_width = ((image_width - kernel_width) >> shift )+ 1
+    output_depth = kernel.shape[0]
+    output_channels = output_depth
+
+    # Initialize the output feature map
+    output = np.zeros((output_depth, output_height, output_width), dtype=int)
+
+
+    # Perform the convolution with stride
+    for i in range(0, output_height * stride, stride):
+        for j in range(0, output_width * stride, stride):
+            # Extract the region of interest (ROI) from the image
+            roi = image_padded[:, i:i+kernel_height, j:j+kernel_width]
+
+            # Initialize the accumulator for the current position in the output
+            accumulator = 0
+
+            # Perform element-wise multiplication and accumulate
+            for k in range(output_channels):
+                for m in range(kernel_height):
+                    for n in range(kernel_width):
+                        for c in range(in_channels):
+                            #accumulator += roi[m, n] * kernel[m, n]
+                            accumulator = MyWrapper(accumulator, Mult_by_add(roi[c, m, n], kernel[k, m, n]))
+
+                # Assign the accumulated value to the output
+                output[k, (i >> shift), (j >> shift)] = accumulator
+
+    return output
+
+
 def multichannelconv(in_channels, out_channels, image, kernel, stride, padding):
 
     #stride to bitshift
@@ -318,8 +373,7 @@ def conv2d(image, kernel, stride=1, padding=0, bias=None):
     # Initialize the output feature map
     output = np.zeros((output_height, output_width))
     
-    # Apply padding to the input image
-    image_padded = np.pad(image, ((padding, padding), (padding, padding)), mode='constant')
+
     
     # Perform the convolution with stride
     for i in range(0, output_height, stride):
@@ -482,6 +536,9 @@ print("Output Probabilities:", output_probabilities)
 # print(np.shape(Wt))
 
 
+import torch
+import torch.nn as nn
+
 # print(imi)
 # print(np.shape(imi))
 # residi = convolution2d(imi, Wt)
@@ -506,16 +563,19 @@ print("Output Probabilities:", output_probabilities)
 
 # output_height = 12
 # output_width = 12
-padding = 2
+padding = 1
 stride = 2
-kernel = np.random.randint(-1, 0, size=(3,3,3))
+kernel = np.random.randint(-1, 2, size=(1,3,3), dtype=int)
+#kernel = torch.randint(-1,2, size=(3, 2, 2), dtype=torch.int8)
+# print(kernel)
 #kernel = np.array([[2,0,0],
                 #    [0,2,0],
                 #    [1,0,2]], dtype=int)
 #image = np.random.randint(-4, 3, size=(8,8))
-image = np.ones((3,8,8), dtype=int)
+image = np.random.randint(-8,9, size=(3,16,16), dtype=int)
+#image = torch.randint(-8,9, size=(3, 8, 8), dtype=torch.int8)
 # print(kernel)
-print(np.shape(image))
+# print(np.shape(image))
 # print(image[0,:,:])
 # ref = convolution2dpadding(image, kernel, padding)
 # rusi = convolution2dpaddingstride(image, kernel, padding, stride)
@@ -524,9 +584,10 @@ print(np.shape(image))
 # print(np.shape(rusi))
 # print(rusi)
 
-todo = multichannelconv(3,3,image, kernel, 2, 2)
+todo = varchannel_conv(image, kernel, stride, padding)
 
 print(todo.shape)
+print(todo)
 
 
 
