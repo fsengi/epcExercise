@@ -54,4 +54,27 @@ import numpy as np
 
 t = 4
 
-print(len(t))
+
+
+import torch
+import torch.nn as nn
+padding = 5
+
+in_channels = 3
+
+input_tensor = torch.randn((in_channels, 8, 8))
+input_tensor = torch.randint(-8,9, size=(in_channels, 8, 8), dtype=torch.int8)
+input_tensor = np.random.randint(-2,3, size=(3,4,8), dtype=int)
+
+print(input_tensor.shape)
+#print(torch.max(input_tensor[0]))
+print(input_tensor[1])
+
+input_tensor_padded = np.zeros((in_channels, input_tensor.shape[1]+2*padding,input_tensor.shape[2]+2*padding))
+for c in range(in_channels):
+    input_tensor_padded[c] = np.pad(input_tensor[c], ((padding, padding), (padding, padding)), mode='constant')
+
+print(input_tensor_padded.shape)
+#print(torch.max(input_tensor[0]))
+print(input_tensor_padded[1])
+
