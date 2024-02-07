@@ -78,3 +78,7 @@ print(input_tensor_padded.shape)
 #print(torch.max(input_tensor[0]))
 print(input_tensor_padded[1])
 
+
+34877673940.0
+
+13083571383.0

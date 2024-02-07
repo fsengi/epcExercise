@@ -96,7 +96,6 @@ def MyNbitAdder(a,b):
     total_sum += pow(2,index+1)*carry_over
     return total_sum, count
 
-print(MyNbitAdder(512,512))
 
 def MyWrapper(a,b):
     if (((a + b) < 127) and ((a + b) > -128)):
@@ -584,10 +583,10 @@ image = np.random.randint(-4,5, size=(3,16,16), dtype=int)
 # print(np.shape(rusi))
 # print(rusi)
 
-todo = varchannel_conv(image, kernel, stride, padding)
+# todo = varchannel_conv(image, kernel, stride, padding)
 
-print(todo.shape)
-print(todo)
+# print(todo.shape)
+# print(todo)
 
 
 
@@ -599,3 +598,280 @@ print(todo)
 #         tmp[i,j] = image[i-padding, j-padding]
 
 # print(tmp)
+
+
+
+
+# pattern for aproximation and exact adder
+energy_consumption_list = []
+energy_consumption_list.append([2068.7, 1962.8, 1853.7, 1797.8, 1982.9, 1893.6, 1882, 1811.2]) # exact adder
+energy_consumption_list.append([696.69, 661.61, 641.48, 611.95, 642.26, 612.56, 581.57, 568.23]) # own Aprox
+energy_consumption_list.append([722.64, 801.437,667.417, 686.277, 759.353, 742.095, 695.799, 720.61]) # SIAFA 1
+energy_consumption_list.append([1011.046, 955.49, 960.609, 946.953, 910.111, 898.936, 936.505, 927.341]) # SIAFA 2
+energy_consumption_list.append([722.58, 709.08, 760.5, 744.12, 668.6, 689.24, 698.24, 724.26]) # SIAFA 3
+energy_consumption_list.append([722.68, 709.38, 667.2, 687.02, 752.12, 729.72, 701.59, 721.4]) # SIAFA 4
+energy_consumption_list.append([696.69, 661.61, 641.48, 611.95, 642.26, 612.56, 581.57, 568.23]) # TODO Serial Aprox data missing
+energy_consumption_list.append([696.69, 661.61, 641.48, 611.95, 642.26, 612.56, 581.57, 568.23]) # TODO Semi Serial Aprox data missing
+
+truthTable_s_list = []
+truthTable_s_list.append([0, 1, 1, 0, 1, 0, 0, 1]) # exact adder
+truthTable_s_list.append([1, 1, 1, 1, 1, 1, 0, 1]) # own Aprox
+truthTable_s_list.append([1, 1, 1, 0, 1, 1, 0, 0]) # SIAFA 1
+truthTable_s_list.append([1, 1, 1, 0, 1, 0, 0, 0]) # SIAFA 2
+truthTable_s_list.append([1, 1, 1, 1, 1, 0, 0, 0]) # SIAFA 3
+truthTable_s_list.append([1, 1, 1, 0, 1, 0, 1, 0]) # SIAFA 4
+truthTable_s_list.append([1, 1, 1, 0, 1, 1, 0, 0]) # Serial Aprox
+truthTable_s_list.append([1, 1, 1, 0, 0, 0, 0, 0]) # Semi Serial Aprox
+
+
+truthTable_c_list = []
+truthTable_c_list.append([0, 0, 0, 1, 0, 1, 1, 1]) # exact adder
+truthTable_c_list.append([0, 1, 0, 1, 0, 1, 1, 1]) # own Aprox
+truthTable_c_list.append([0, 0, 0, 1, 0, 0, 1, 1]) # SIAFA 1
+truthTable_c_list.append([0, 1, 0, 1, 0, 1, 1, 1]) # SIAFA 2
+truthTable_c_list.append([0, 0, 0, 0, 0, 1, 1, 1]) # SIAFA 3
+truthTable_c_list.append([0, 0, 0, 1, 0, 1, 0, 1]) # SIAFA 4
+truthTable_c_list.append([0, 0, 0, 1, 0, 0, 1, 1]) # Serial Aprox
+truthTable_c_list.append([0, 0, 0, 1, 1, 1, 1, 1]) # Semi Serial Aprox
+
+
+nameApprox_list = []
+nameApprox_list.append("exact")
+nameApprox_list.append("own_Aprox")
+nameApprox_list.append("SIAFA 1")
+nameApprox_list.append("SIAFA 2")
+nameApprox_list.append("SIAFA 3")
+nameApprox_list.append("SIAFA 4")
+nameApprox_list.append("Serial Aprox")
+nameApprox_list.append("Semi Serial Aprox")
+
+
+
+# write data to json file 
+import json 
+# Create a dictionary to hold the parsed data
+parsed_data = {}
+empty_list = [0,0,0,0,0,0,0,0,0]
+
+# Populate the dictionary
+for i, name in enumerate(nameApprox_list):
+    parsed_data[name] = {"s": truthTable_s_list[i], "c": truthTable_c_list[i], "energy": energy_consumption_list[i], "ssi": empty_list, "psnr": empty_list, "energy_con": empty_list}
+
+json_file_path = 'data.json'
+
+# Write the data to the JSON file
+with open(json_file_path, 'w') as json_file:
+    json.dump(parsed_data, json_file, indent=4)
+
+
+
+
+def Adder(a, b, c, approxAlgo = 'exact'):
+    if a==0 and b==0 and c==0:
+        s = loaded_dict[approxAlgo]["s"][0]
+        c_out = loaded_dict[approxAlgo]["c"][0]
+        energy_consumption = loaded_dict[approxAlgo]["energy"][0]
+    elif a==0 and b==0 and c==1:
+        s = loaded_dict[approxAlgo]["s"][1]
+        c_out = loaded_dict[approxAlgo]["c"][1]
+        energy_consumption = loaded_dict[approxAlgo]["energy"][1]
+    elif a==0 and b==1 and c==0:
+        s = loaded_dict[approxAlgo]["s"][2]
+        c_out = loaded_dict[approxAlgo]["c"][2]
+        energy_consumption = loaded_dict[approxAlgo]["energy"][2]
+    elif a==0 and b==1 and c==1:
+        s = loaded_dict[approxAlgo]["s"][3]
+        c_out = loaded_dict[approxAlgo]["c"][3]
+        energy_consumption = loaded_dict[approxAlgo]["energy"][3]
+    elif a==1 and b==0 and c==0:
+        s = loaded_dict[approxAlgo]["s"][4]
+        c_out = loaded_dict[approxAlgo]["c"][4]
+        energy_consumption = loaded_dict[approxAlgo]["energy"][4]
+    elif a==1 and b==0 and c==1:
+        s = loaded_dict[approxAlgo]["s"][5]
+        c_out = loaded_dict[approxAlgo]["c"][5]
+        energy_consumption = loaded_dict[approxAlgo]["energy"][5]
+    elif a==1 and b==1 and c==0:
+        s = loaded_dict[approxAlgo]["s"][6]
+        c_out = loaded_dict[approxAlgo]["c"][6]
+        energy_consumption = loaded_dict[approxAlgo]["energy"][6]
+    elif a==1 and b==1 and c==1:
+        s = loaded_dict[approxAlgo]["s"][7]
+        c_out = loaded_dict[approxAlgo]["c"][7]
+        energy_consumption = loaded_dict[approxAlgo]["energy"][7]
+    return s, c_out, energy_consumption
+
+def My_Multiplier(a,b, approxAlgo, approxBit, blurrFlag=False):
+    energy = 0
+    if a > b:
+        res = a
+        multiplier = a
+        multcount = b
+    else:
+        res = b
+        multiplier = b
+        multcount = a
+    
+    for i in range(1, multcount):
+        res, e  = MyNbitAdder(res, multiplier, approxAlgo, approxBit)
+        energy += e
+    if blurrFlag:
+        res = res >> 3
+    return res, energy
+
+
+def MySum(matrix, energy, approxAlgo, approxBit):
+    res = 0
+    for i in range(matrix.shape[0]):
+        for j in range(matrix.shape[1]):
+            res, e = MyNbitAdder(res, int(matrix[i,j]), approxAlgo, approxBit)
+        energy += e
+    return res, energy
+
+#In 8 bit adder, lower 3 bits are implemented with approximate adder and rest of the with exact adder
+def SunnyMyNbitAdder(a, b, Algo, Bit):
+    try:
+        #convert to binary and cut off the first two indices (they dont belong to the number but indicate that it is binary)
+        a_bin, b_bin = bin(a)[2:], bin(b)[2:]
+        
+        #reverse order of bytes for the adder
+        rev_a , rev_b = list(a_bin[::-1]), list(b_bin[::-1])
+        
+        #We want to make the to bytes to equalt length such that we can add 
+        #--> add zeros to the shortest list until it is the same as the longest
+        rev_a = rev_a + max(0, len(rev_b)-len(rev_a)) * [0]
+        rev_b = rev_b + max(0, len(rev_a)-len(rev_b)) * [0]
+
+        carry_over  = 0
+        total_sum   = 0
+        
+        #############################################
+        approx_until = Bit #change this if u want to approximate the first bits by an approximate adder
+        #############################################
+
+        #we want to do a bitwise addition
+        count = 0
+        total_energy = 0
+        for index, (bit1, bit2) in enumerate(zip(rev_a, rev_b) ):
+            if index < approx_until:
+                #use approx_adder
+                sum_element, carry_over, _energy = Adder(int(bit1), int(bit2), int(carry_over), Algo) 
+            else:
+                #use exact_adder
+                sum_element, carry_over, _energy = Adder(int(bit1), int(bit2), int(carry_over))
+            
+            count = count + 1
+            total_energy += _energy
+
+            total_sum += pow(2,index) * sum_element
+
+        total_sum += pow(2,index+1) * carry_over
+       
+        return total_sum, total_energy #total energy in pJ!
+    except Exception as e:
+        print(f'Error: {e}')
+
+
+
+
+# Load the data from the JSON file into a dictionary
+with open(json_file_path, 'r') as json_file:
+    loaded_dict = json.load(json_file)
+
+
+def SunnyMyWrapper(a,b, alg, bit):
+    global tot_enegery
+    if (((a + b) < 127) and ((a + b) > -128)):
+        tot_enegery += SunnyMyNbitAdder(a+ 128,b+ 128,alg, bit)[1]
+        return SunnyMyNbitAdder(a+ 128,b+ 128, alg, bit)[0] - 256
+    else:
+        tot_enegery += SunnyMyNbitAdder(a+ 128,b+ 128,alg, bit)[1]
+        return 127
+
+def sunMult_by_add(a,b):
+    tmp = 0
+    for i in range(np.abs(b)):
+        tmp = SunnyMyWrapper(tmp,a, algorithm, bit)
+    if b > 0:
+        return tmp
+    elif b < 0:
+        return -tmp
+    else:
+        return 0
+
+
+
+def sunvarchannel_conv(image, kernel, stride, padding):
+
+    #stride to bitshift
+    if stride == 2:
+        shift = 1
+    else:
+        shift = 0
+
+    #Determine number of in_channels
+    in_channels = image.shape[0]
+
+    # Apply zero-padding to the input image on all in_channels
+    image_padded = np.zeros((in_channels, image.shape[1]+2*padding,image.shape[2]+2*padding), dtype=int)
+    for c in range(in_channels):
+        image_padded[c] = np.pad(image[c], ((padding, padding), (padding, padding)), mode='constant')
+
+    # print(image_padded[0])
+
+    # Get dimensions of the padded image and kernel
+    image_height, image_width = image_padded.shape[1], image_padded.shape[2]
+    kernel_height, kernel_width = kernel.shape[1], kernel.shape[2]
+
+    # Calculate the output dimensions using bitshifts
+    output_height = ((image_height - kernel_height) >> shift) + 1
+    output_width = ((image_width - kernel_width) >> shift )+ 1
+    output_depth = kernel.shape[0]
+    output_channels = output_depth
+
+    # Initialize the output feature map
+    output = np.zeros((output_depth, output_height, output_width), dtype=int)
+
+
+    # Perform the convolution with stride
+    for i in range(0, output_height * stride, stride):
+        for j in range(0, output_width * stride, stride):
+            # Extract the region of interest (ROI) from the image
+            roi = image_padded[:, i:i+kernel_height, j:j+kernel_width]
+
+            # Initialize the accumulator for the current position in the output
+            accumulator = 0
+
+            # Perform element-wise multiplication and accumulate
+            for k in range(output_channels):
+                for m in range(kernel_height):
+                    for n in range(kernel_width):
+                        for c in range(in_channels):
+                            #accumulator += roi[m, n] * kernel[m, n]
+                            accumulator = SunnyMyWrapper(accumulator, sunMult_by_add(roi[c, m, n], kernel[k, m, n]), algorithm, bit)
+
+                # Assign the accumulated value to the output
+                output[k, (i >> shift), (j >> shift)] = accumulator
+
+    return output
+
+# print(SunnyMyNbitAdder(133,133,"own_Aprox", 6))
+# print(-16+64)
+# print(SunnyMyWrapper(-16,64,algorithm, bit))
+# print(MyWrapper(-16,64))
+
+tot_enegery = 0
+
+padding = 1
+stride = 1
+algorithm = "own_Aprox"
+bit = 4
+kernel = np.random.randint(-2, 2, size=(6,5,5), dtype=int)
+
+image = np.random.randint(-4,5, size=(3,40,40), dtype=int)
+
+todo = sunvarchannel_conv(image, kernel, stride, padding)
+
+print(todo.shape)
+print(todo[3])
+print(tot_enegery)
