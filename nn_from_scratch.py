@@ -880,14 +880,16 @@ image = np.random.randint(-5,5, size=(3,40,40), dtype=int)
 
 
 def resnet(input_image):
-
-    tot_enegery = 0
     algorithm = "own_Aprox"
     bit = 4
 
     # Initialize Weights
     K0 = np.random.randint(-2, 2, size=(6,5,5), dtype=int)
     K1 = np.random.randint(-2, 2, size=(6,3,3), dtype=int)
+    K2 = np.random.randint(-2, 2, size=(6,3,3), dtype=int)
+    K3 = np.random.randint(-2, 2, size=(6,3,3), dtype=int)
+    K4 = np.random.randint(-2, 2, size=(6,3,3), dtype=int)
+    K5 = np.random.randint(-2, 2, size=(1,3,3), dtype=int)
 
 
     # Forward pass
@@ -895,7 +897,41 @@ def resnet(input_image):
     conv0 = sunvarchannel_conv(input_image, K0, 2, 0)
     relu0 = relu(conv0)
     print(relu0.shape)
-    conv1 = sunvarchannel_conv(input_image, K0, 2, 0)
+
+
+    conv1 = sunvarchannel_conv(relu0, K1, 1, 1)
+    print(conv1.shape)
+    relu1 = relu(conv1)
+    conv2 = sunvarchannel_conv(relu1, K2, 1, 1)
+    print(conv2.shape)
+    relu2 = relu(conv2)
+
+    skip_connection0 = relu2 + relu0
+    print(skip_connection0.shape)
+    # print(skip_connection0[0])
+
+    conv3 = sunvarchannel_conv(skip_connection0, K3, 1, 1)
+    print(conv3.shape)
+    relu3 = relu(conv3)
+    conv4 = sunvarchannel_conv(relu3, K4, 1, 1)
+    print(conv4.shape)
+    relu4 = relu(conv4)
+
+    skip_connection1 = relu4 + skip_connection0
+    print(skip_connection1.shape)
+    # print(skip_connection1[0])
+
+    conv5 = sunvarchannel_conv(skip_connection1, K5, 1, 1)
+    print(conv5.shape)
+    relu5 = relu(conv5)
+    flattened_output = relu5.flatten()
+    print(flattened_output.shape)
+
+    fc_weights = initialize_weights((flattened_output.shape[0], 10))
+    fc_output = np.dot(flattened_output, fc_weights)
+    
+    # Apply softmax for classification
+    output_probabilities = softmax(fc_output)
 
     # conv1 = convolution2dpadding(input_image, W1, 2)
     # relu1 = relu(conv1)
@@ -937,10 +973,16 @@ def resnet(input_image):
     # # Apply softmax for classification
     # output_probabilities = softmax(fc_output)
     
-    return relu0
+    return output_probabilities
 
 
 
 # print(image.shape)
 # print(resnet(image)[0])
-resnet(image)
+tot_enegery = 0
+tot = resnet(image)
+print(tot)
+print(tot_enegery)
+
+
+# Implement regularizing skip connection with the approx adder used for the addition
