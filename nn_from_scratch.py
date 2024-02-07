@@ -457,10 +457,11 @@ def max_pooling(input_array, pool_size=(2, 2)):
 
 
 def relu(x):
-    res = np.zeros((np.shape(x)[0], np.shape(x)[1]), dtype=int)
+    res = np.zeros((np.shape(x)[0], np.shape(x)[1], np.shape(x)[2]), dtype=int)
     for i in range(np.shape(x)[0]):
         for j in range(np.shape(x)[1]):
-            res[i,j] = np.maximum(0,x[i,j])
+            for k in range(np.shape(x)[2]):
+                res[i,j,k] = np.maximum(0,x[i,j,k])
     return res
 
 def softmax(x):
@@ -473,61 +474,61 @@ def initialize_weights(shape):
 def initialize_bias(shape):
     return np.zeros(shape, dtype=int)
 
-def simple_convolutional_net(input_image):
-    # Define the architecture
-    W1 = initialize_weights((3, 3))
-    W2 = initialize_weights((3, 3))
-    W3 = initialize_weights((3, 3))
-    W4 = initialize_weights((3, 3))
+# def simple_convolutional_net(input_image):
+#     # Define the architecture
+#     W1 = initialize_weights((3, 3))
+#     W2 = initialize_weights((3, 3))
+#     W3 = initialize_weights((3, 3))
+#     W4 = initialize_weights((3, 3))
     
-    # Forward pass
-    #conv1 = convolution2d(input_image, W1)
-    conv1 = convolution2dpadding(input_image, W1, 2)
-    relu1 = relu(conv1)
-    # print(input_image)
-    print(np.max(input_image))
-    # print(relu1)
-    print(np.shape(relu1))
-    print(np.max(relu1))
+#     # Forward pass
+#     #conv1 = convolution2d(input_image, W1)
+#     conv1 = convolution2dpadding(input_image, W1, 2)
+#     relu1 = relu(conv1)
+#     # print(input_image)
+#     print(np.max(input_image))
+#     # print(relu1)
+#     print(np.shape(relu1))
+#     print(np.max(relu1))
 
-    relu1 = max_pooling(relu1)
+#     relu1 = max_pooling(relu1)
     
-    conv2 = convolution2d(relu1,W2)
-    relu2 = relu(conv2)
+#     conv2 = convolution2d(relu1,W2)
+#     relu2 = relu(conv2)
 
 
-    # print(relu2)
-    print(np.shape(relu2))
-    print(np.max(relu2))
+#     # print(relu2)
+#     print(np.shape(relu2))
+#     print(np.max(relu2))
 
-    relu2 = max_pooling(relu2)
+#     relu2 = max_pooling(relu2)
     
-    conv3 = convolution2d(relu2,W3)
-    relu3 = relu(conv3)
+#     conv3 = convolution2d(relu2,W3)
+#     relu3 = relu(conv3)
 
-    # print(relu2)
-    print(np.shape(relu3))
-    print(np.max(relu3))
+#     # print(relu2)
+#     print(np.shape(relu3))
+#     print(np.max(relu3))
     
-    conv4 = convolution2d(relu3,W4)
-    relu4 = relu(conv4)
+#     conv4 = convolution2d(relu3,W4)
+#     relu4 = relu(conv4)
     
-    # Flatten the output for fully connected layer
-    flattened_output = relu4.flatten()
+#     # Flatten the output for fully connected layer
+#     flattened_output = relu4.flatten()
     
-    # Fully connected layer
-    fc_weights = initialize_weights((flattened_output.shape[0], 10))
-    fc_output = np.dot(flattened_output, fc_weights)
+#     # Fully connected layer
+#     fc_weights = initialize_weights((flattened_output.shape[0], 10))
+#     fc_output = np.dot(flattened_output, fc_weights)
     
-    # Apply softmax for classification
-    output_probabilities = softmax(fc_output)
+#     # Apply softmax for classification
+#     output_probabilities = softmax(fc_output)
     
-    return output_probabilities
+#     return output_probabilities
 
-#Example usage
-input_image = np.random.randint(-4, 3, size=(100,100))
-output_probabilities = simple_convolutional_net(input_image)
-print("Output Probabilities:", output_probabilities)
+# #Example usage
+# input_image = np.random.randint(-4, 3, size=(100,100))
+# output_probabilities = simple_convolutional_net(input_image)
+# print("Output Probabilities:", output_probabilities)
 
 # imi = initialize_weights((8,8))
 # Wt = initialize_weights((3,3))
@@ -868,10 +869,78 @@ algorithm = "own_Aprox"
 bit = 4
 kernel = np.random.randint(-2, 2, size=(6,5,5), dtype=int)
 
-image = np.random.randint(-4,5, size=(3,40,40), dtype=int)
+image = np.random.randint(-5,5, size=(3,40,40), dtype=int)
 
-todo = sunvarchannel_conv(image, kernel, stride, padding)
+# todo = sunvarchannel_conv(image, kernel, stride, padding)
 
-print(todo.shape)
-print(todo[3])
-print(tot_enegery)
+# print(todo.shape)
+# print(todo[3])
+# print(tot_enegery)
+
+
+
+def resnet(input_image):
+
+    tot_enegery = 0
+    algorithm = "own_Aprox"
+    bit = 4
+
+    # Initialize Weights
+    K0 = np.random.randint(-2, 2, size=(6,5,5), dtype=int)
+    K1 = np.random.randint(-2, 2, size=(6,3,3), dtype=int)
+
+
+    # Forward pass
+    #conv1 = convolution2d(input_image, W1)
+    conv0 = sunvarchannel_conv(input_image, K0, 2, 0)
+    relu0 = relu(conv0)
+    print(relu0.shape)
+    conv1 = sunvarchannel_conv(input_image, K0, 2, 0)
+
+    # conv1 = convolution2dpadding(input_image, W1, 2)
+    # relu1 = relu(conv1)
+    # # print(input_image)
+    # print(np.max(input_image))
+    # # print(relu1)
+    # print(np.shape(relu1))
+    # print(np.max(relu1))
+
+    # relu1 = max_pooling(relu1)
+    
+    # conv2 = convolution2d(relu1,W2)
+    # relu2 = relu(conv2)
+
+
+    # # print(relu2)
+    # print(np.shape(relu2))
+    # print(np.max(relu2))
+
+    # relu2 = max_pooling(relu2)
+    
+    # conv3 = convolution2d(relu2,W3)
+    # relu3 = relu(conv3)
+
+    # # print(relu2)
+    # print(np.shape(relu3))
+    # print(np.max(relu3))
+    
+    # conv4 = convolution2d(relu3,W4)
+    # relu4 = relu(conv4)
+    
+    # # Flatten the output for fully connected layer
+    # flattened_output = relu4.flatten()
+    
+    # # Fully connected layer
+    # fc_weights = initialize_weights((flattened_output.shape[0], 10))
+    # fc_output = np.dot(flattened_output, fc_weights)
+    
+    # # Apply softmax for classification
+    # output_probabilities = softmax(fc_output)
+    
+    return relu0
+
+
+
+# print(image.shape)
+# print(resnet(image)[0])
+resnet(image)
