@@ -1,3 +1,5 @@
+import os
+import json
 from skimage import io, img_as_float, img_as_ubyte
 from skimage.metrics import structural_similarity as ssim
 from scipy import signal
@@ -28,7 +30,7 @@ energy_consumption_list.append([722.64, 801.437,667.417, 686.277, 759.353, 742.0
 energy_consumption_list.append([1011.046, 955.49, 960.609, 946.953, 910.111, 898.936, 936.505, 927.341]) # SIAFA 2
 energy_consumption_list.append([722.58, 709.08, 760.5, 744.12, 668.6, 689.24, 698.24, 724.26]) # SIAFA 3
 energy_consumption_list.append([722.68, 709.38, 667.2, 687.02, 752.12, 729.72, 701.59, 721.4]) # SIAFA 4
-energy_consumption_list.append([696.69, 661.61, 641.48, 611.95, 642.26, 612.56, 581.57, 568.23]) # TODO Serial Aprox data missing
+energy_consumption_list.append([772.01, 715.242, 716.736, 693.766, 751.802, 700.172, 688.285, 678.696]) # Serial Aprox
 energy_consumption_list.append([696.69, 661.61, 641.48, 611.95, 642.26, 612.56, 581.57, 568.23]) # TODO Semi Serial Aprox data missing
 energy_consumption_list.append([696.69, 661.61, 641.48, 611.95, 642.26, 612.56, 581.57, 568.23]) # TODO own 3Memristors
 
@@ -65,7 +67,7 @@ nameApprox_list.append("SIAFA 3")
 nameApprox_list.append("SIAFA 4")
 nameApprox_list.append("Serial Aprox")
 nameApprox_list.append("Semi Serial Aprox")
-nameApprox_list.append("own_3Memristors")
+nameApprox_list.append("own 3Memristors")
 
 blurrKernel = np.array([[1,1,1],[1,1,1],[1,1,1]])
 edgeDetectionKernel = np.array([[-1,-1,-1],[-1,8,-1],[-1,-1,-1]])
@@ -76,7 +78,7 @@ kernel_list.append(edgeDetectionKernel)
 
 kernelname_list = []
 kernelname_list.append("blurring")
-kernelname_list.append("edge_Detection")
+kernelname_list.append("edge Detection")
 
 # write data to json file 
 
@@ -149,7 +151,6 @@ def My_Multiplier(a,b, approxAlgo, approxBit, blurrFlag=False):
     #     res = res >> 3
     return res, energy
 
-
 def My_Mult(a, b, approxAlgo, approxBit, blurrFlag=False):
     '''go throw every pixel in 3x3 matrix'''
     energy = 0
@@ -161,7 +162,6 @@ def My_Mult(a, b, approxAlgo, approxBit, blurrFlag=False):
     return res, energy
 
 # Convolution
-
 def MyconvLUT(a, b, aproxAlgo, aproxBit, blurrFlag=False, demoDataFlag=False):
     if demoDataFlag:
         return a, 1000000
@@ -193,15 +193,37 @@ def MySum(matrix, energy, approxAlgo, approxBit):
 def MyNbitAdder(a, b, Algo, Bit):
     try:
         #convert to binary and cut off the first two indices (they dont belong to the number but indicate that it is binary)
-        a_bin, b_bin = bin(a)[2:], bin(b)[2:]
+        
+        if a >= 0 and b >= 0:    
+            a_bin = bin(a)[2:]
+            b_bin = bin(b)[2:]
+        elif a < 0 and b >= 0:
+            a_bin = decimal2TwoComplement(a)
+            b_bin = bin(b)[2:]
+        elif a >= 0 and b < 0:
+            a_bin = bin(a)[2:]
+            b_bin = decimal2TwoComplement(b)
+        elif a < 0 and b < 0:
+            minusABFlag = True
+            a_bin = bin(a)[3:]
+            b_bin = bin(b)[3:]
+        else:
+            print('Error')
         
         #reverse order of bytes for the adder
         rev_a , rev_b = list(a_bin[::-1]), list(b_bin[::-1])
         
         #We want to make the to bytes to equalt length such that we can add 
         #--> add zeros to the shortest list until it is the same as the longest
-        rev_a = rev_a + max(0, len(rev_b)-len(rev_a)) * [0]
-        rev_b = rev_b + max(0, len(rev_a)-len(rev_b)) * [0]
+        if a >= 0 or minusABFlag: 
+            rev_a = rev_a + max(0, len(rev_b)-len(rev_a)) * [0]
+        else: 
+            rev_a = rev_a + max(0, len(rev_b)-len(rev_a)) * [1]
+        
+        if b >= 0 or minusABFlag:
+            rev_b = rev_b + max(0, len(rev_a)-len(rev_b)) * [0]
+        else:
+            rev_b = rev_b + max(0, len(rev_a)-len(rev_b)) * [1]
 
         carry_over  = 0
         total_sum   = 0
@@ -209,10 +231,8 @@ def MyNbitAdder(a, b, Algo, Bit):
         #############################################
         approx_until = Bit #change this if u want to approximate the first bits by an approximate adder
         #############################################
-
+        sum_list = []
         #we want to do a bitwise addition
-        count = 0
-        total_energy = 0
         for index, (bit1, bit2) in enumerate(zip(rev_a, rev_b) ):
             if index < approx_until:
                 #use approx_adder
@@ -221,22 +241,69 @@ def MyNbitAdder(a, b, Algo, Bit):
                 #use exact_adder
                 sum_element, carry_over, _energy = Adder(int(bit1), int(bit2), int(carry_over))
             
-            count = count + 1
+            sum_list.append(int(sum_element))
             total_energy += _energy
+        
+        if a+b < 0 and not minusABFlag:
+            # sum_list.append(int(carry_over))
+            print(sum_list)
+            total_sum = twoComplement2Decimal(sum_list)
+        elif a+b >= 0 and a >= 0 and b >= 0:
+            sum_list.append(int(carry_over))
+            print(sum_list)
+            total_sum = binary2Decimal(sum_list)
+        elif a+b >= 0 and (a < 0 or b < 0):
+            # sum_list.append(int(carry_over))
+            print(sum_list)
+            total_sum = binary2Decimal(sum_list)
+        elif minusABFlag:
+            sum_list.append(int(carry_over))
+            print(sum_list)
+            total_sum = binary2Decimal(sum_list)
+            total_sum = total_sum * (-1)
 
-            total_sum += pow(2,index) * sum_element
-
-        total_sum += pow(2,index+1) * carry_over
-       
         return total_sum, total_energy #total energy in pJ!
     except Exception as e:
         print(f'Error: {e}')
 
-import os
-import json
+def decimal2TwoComplement(num) -> list:
+    num_bits = int(math.log2(abs(num))) + 3
+    binary = bin(num & (2 ** num_bits - 1))[2:]  # Calculate two's complement
+    bitlist = [int(bit) for bit in binary.zfill(num_bits)]
+    # print(bitlist)
+    return bitlist 
+
+def twoComplement2Decimal(bitlist):
+    # Check if the number is negative
+    revnum = list(bitlist[::-1])
+
+    # Perform two's complement negation
+    flipped_bits = ''
+    for bit in revnum:
+        if bit == 0:
+            flipped_bits = flipped_bits + '1'
+        else: 
+            flipped_bits = flipped_bits + '0'
+    # print(flipped_bits)
+    positive_decimal = int(flipped_bits, 2) + 1
+    return -positive_decimal
+
+def binary2Decimal(bitlist):
+    # Convert the bit list to a string
+    revnum = list(bitlist[::-1])
+    bitstring = ''
+    for bit in revnum:
+        if bit == 1:
+            bitstring = bitstring + '1'
+        else: 
+            bitstring = bitstring + '0'
+    
+    # Convert the bit string to a decimal number
+    decimal_number = int(bitstring, 2)
+    return decimal_number
 
 rows = 12
-coll = 6
+coll = 8
 bit_list = range(0,rows)
 algo_list = ["own_Aprox","SIAFA 1","SIAFA 2","SIAFA 3","SIAFA 4","Serial Aprox","Semi Serial Aprox","own_3Memristors"]
 # algo_list = ["own_3Memristors"]
@@ -261,8 +328,8 @@ for kernel, kernel_name in zip(kernel_list, kernelname_list):
         for indexBit, approxBit in enumerate(bit_list):
             print(f'kernel: {kernel_name} Algo: {approxAlgo} Bit: {approxBit}')
             if not calcAllNewFlag:
-                # if checkFilePresent(f'data_{kernel_name}/outputimage_{approxAlgo}_{indexBit}'):
-                if checkFilePresent(f'data/outputimage_{approxAlgo}_{indexBit}'):
+                if checkFilePresent(f'data_{kernel_name}/outputimage_{approxAlgo}_{indexBit}'):
+                # if checkFilePresent(f'data/outputimage_{approxAlgo}_{indexBit}'):
                     continue
             if kernel_name == "blurring":
                 blurrFlag = True
@@ -270,11 +337,11 @@ for kernel, kernel_name in zip(kernel_list, kernelname_list):
             approx_pic, total_energy = MyconvLUT(Y_wood, kernel, approxAlgo, approxBit, demoDataFlag=demoDataFlag, blurrFlag=blurrFlag)
             # add_approx, max_Nbit_adder, total_energy = MyAdder(Y_einstein,Y_cap,approxAlgo,approxBit)
 
-            # plt.imsave(f'data_{kernel_name}/outputimage_{approxAlgo}_{indexBit}.png', approx_pic, cmap='gray')
-            plt.imsave(f'data/outputimage_{approxAlgo}_{indexBit}.png', approx_pic, cmap='gray')
+            plt.imsave(f'data_{kernel_name}/outputimage_{approxAlgo}_{indexBit}.png', approx_pic, cmap='gray')
+            # plt.imsave(f'data/outputimage_{approxAlgo}_{indexBit}.png', approx_pic, cmap='gray')
 
-            # with open(f'data_{kernel_name}/{approxAlgo}_{indexBit}.json', 'w') as json_file:
-            with open(f'data/{approxAlgo}_{indexBit}.json', 'w') as json_file:
+            with open(f'data_{kernel_name}/{approxAlgo}_{indexBit}.json', 'w') as json_file:
+            # with open(f'data/{approxAlgo}_{indexBit}.json', 'w') as json_file:
                 json.dump(total_energy, json_file, indent=4)
 
         
