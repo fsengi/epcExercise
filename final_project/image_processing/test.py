@@ -1,15 +1,25 @@
 import os
 import json
-from skimage import io, img_as_float, img_as_ubyte
-from skimage.metrics import structural_similarity as ssim
-from scipy import signal
-from math import log10
+from skimage import io
 import matplotlib.pyplot as plt
 import numpy as np
 import json 
+import math
 
+####################################
+rows = 9
+coll = 8
+bit_list = range(1,rows)
+algo_list = ["own_Aprox","SIAFA 1","SIAFA 2","SIAFA 3","SIAFA 4","Serial Aprox","Semi Serial Aprox 8", "Semi Serial Aprox 7","own 3Memristors"]
+# algo_list = ["Serial Aprox","Semi Serial Aprox","own 3Memristors"]
+# algo_list = ["own_3Memristors"]
+
+calcAllNewFlag = True 
+demoDataFlag = False
+###################################
 
 wood_img = io.imread("wood.jpg")
+# wood_img = io.imread("epcExercise/final_project/image_processing/wood.jpg")
 print(wood_img.shape)
 
 R_1 = wood_img[:, :, 0] 
@@ -31,8 +41,9 @@ energy_consumption_list.append([1011.046, 955.49, 960.609, 946.953, 910.111, 898
 energy_consumption_list.append([722.58, 709.08, 760.5, 744.12, 668.6, 689.24, 698.24, 724.26]) # SIAFA 3
 energy_consumption_list.append([722.68, 709.38, 667.2, 687.02, 752.12, 729.72, 701.59, 721.4]) # SIAFA 4
 energy_consumption_list.append([772.01, 715.242, 716.736, 693.766, 751.802, 700.172, 688.285, 678.696]) # Serial Aprox
-energy_consumption_list.append([696.69, 661.61, 641.48, 611.95, 642.26, 612.56, 581.57, 568.23]) # TODO Semi Serial Aprox data missing
-energy_consumption_list.append([696.69, 661.61, 641.48, 611.95, 642.26, 612.56, 581.57, 568.23]) # TODO own 3Memristors
+energy_consumption_list.append([2446.8, 2518.8, 2284.5, 2313.1, 2374, 2436.9, 2292.3, 2326.9]) # Semi Serial Aprox 8
+energy_consumption_list.append([823.43, 817.43, 775.39, 838.65, 852.77, 843.23, 801.27, 852.65]) # Semi Serial Aprox 7
+energy_consumption_list.append([372.55, 316.45, 320.74, 308.92, 330.8, 279.65, 294.28, 243.13]) # TODO own 3Memristors
 
 
 truthTable_s_list = []
@@ -43,6 +54,7 @@ truthTable_s_list.append([1, 1, 1, 0, 1, 0, 0, 0]) # SIAFA 2
 truthTable_s_list.append([1, 1, 1, 1, 1, 0, 0, 0]) # SIAFA 3
 truthTable_s_list.append([1, 1, 1, 0, 1, 0, 1, 0]) # SIAFA 4
 truthTable_s_list.append([1, 1, 1, 0, 1, 1, 0, 0]) # Serial Aprox
+truthTable_s_list.append([1, 1, 1, 0, 0, 0, 0, 0]) # Semi Serial Aprox
 truthTable_s_list.append([1, 1, 1, 0, 0, 0, 0, 0]) # Semi Serial Aprox
 truthTable_s_list.append([1, 1, 1, 0, 1, 1, 1, 1]) # own 3Memristors
 
@@ -56,6 +68,7 @@ truthTable_c_list.append([0, 0, 0, 0, 0, 1, 1, 1]) # SIAFA 3
 truthTable_c_list.append([0, 0, 0, 1, 0, 1, 0, 1]) # SIAFA 4
 truthTable_c_list.append([0, 0, 0, 1, 0, 0, 1, 1]) # Serial Aprox
 truthTable_c_list.append([0, 0, 0, 1, 1, 1, 1, 1]) # Semi Serial Aprox
+truthTable_c_list.append([0, 0, 0, 1, 1, 1, 1, 1]) # Semi Serial Aprox
 truthTable_c_list.append([0, 1, 0, 1, 0, 1, 0, 1]) # own 3Memristors
 
 nameApprox_list = []
@@ -66,11 +79,15 @@ nameApprox_list.append("SIAFA 2")
 nameApprox_list.append("SIAFA 3")
 nameApprox_list.append("SIAFA 4")
 nameApprox_list.append("Serial Aprox")
-nameApprox_list.append("Semi Serial Aprox")
+nameApprox_list.append("Semi Serial Aprox 8")
+nameApprox_list.append("Semi Serial Aprox 7")
 nameApprox_list.append("own 3Memristors")
 
 blurrKernel = np.array([[1,1,1],[1,1,1],[1,1,1]])
-edgeDetectionKernel = np.array([[-1,-1,-1],[-1,8,-1],[-1,-1,-1]])
+edgeDetectionKernel = np.array([[0,-1,0],[-1,4,-1],[0,-1,0]])
+
+sobel_y = np.array([[-1,-2,-1],[0,0,0],[1,2,1]])
+sobel_x = np.array([[-1,0,1],[-2,0,2],[-1,0,1]])
 
 kernel_list = []
 kernel_list.append(blurrKernel)
@@ -135,20 +152,30 @@ def Adder(a, b, c, approxAlgo = "exact"):
 
 def My_Multiplier(a,b, approxAlgo, approxBit, blurrFlag=False):
     energy = 0
-    if a > b:
-        res = a
-        multiplier = a
-        multcount = b
+    res = 0
+    if a < -1 and a > 1 and b < -1 and b > 1:
+
+        a_wo_sign = abs(a)
+        b_wo_sign = abs(b)
+
+        if a_wo_sign > b_wo_sign:
+            multcount = a
+            multiplier = b
+        else: 
+            multcount = b
+            multiplier = a
+
+        if multcount < 0:
+            multcount = multcount * (-1)
+            multiplier = multiplier * (-1)
+        
+        for i in range(0, multcount):
+            res, e  = MyNbitAdder(res, multiplier, approxAlgo, approxBit)
+            energy += e
     else:
-        res = b
-        multiplier = b
-        multcount = a
-    
-    for i in range(1, multcount):
-        res, e  = MyNbitAdder(res, multiplier, approxAlgo, approxBit)
-        energy += e
-    # if blurrFlag:
-    #     res = res >> 3
+        res = a*b
+    if blurrFlag == True:
+        res = res >> 3
     return res, energy
 
 def My_Mult(a, b, approxAlgo, approxBit, blurrFlag=False):
@@ -158,6 +185,7 @@ def My_Mult(a, b, approxAlgo, approxBit, blurrFlag=False):
     for k in range(a.shape[0]):
         for l in range(a.shape[1]):
             res[k,l], e = My_Multiplier(int(a[k,l]), int(b[k,l]), approxAlgo, approxBit, blurrFlag)
+            # print(f'res:{res[k,l]}')
             energy += e
     return res, energy
 
@@ -175,16 +203,20 @@ def MyconvLUT(a, b, aproxAlgo, aproxBit, blurrFlag=False, demoDataFlag=False):
     res = np.zeros((res_shape1, res_shape2))
     energy = 0
     for i in range(res_shape1):
+        # print(f'row {i} of {res_shape1}')
         for j in range(res_shape2):
-            resmatrix, energy = My_Mult(np.flip(b), a[i:i + b_shape[0], j:j + b_shape[1]], aproxAlgo, aproxBit, blurrFlag=blurrFlag)                   
-            res[i, j], e = MySum(resmatrix, energy, aproxAlgo, aproxBit)
+            resmatrix, ee = My_Mult(np.flip(b), a[i:i + b_shape[0], j:j + b_shape[1]], aproxAlgo, aproxBit, blurrFlag=blurrFlag)                   
+            res[i, j], e = MySum(resmatrix, aproxAlgo, aproxBit)
+            energy += ee 
             energy += e
     return res, energy
 
-def MySum(matrix, energy, approxAlgo, approxBit):
+def MySum(matrix, approxAlgo, approxBit):
     res = 0
+    energy = 0
     for i in range(matrix.shape[0]):
         for j in range(matrix.shape[1]):
+            # print(f'{res}, {int(matrix[i,j])}, {approxAlgo}, {approxBit} ')
             res, e = MyNbitAdder(res, int(matrix[i,j]), approxAlgo, approxBit)
         energy += e
     return res, energy
@@ -193,7 +225,8 @@ def MySum(matrix, energy, approxAlgo, approxBit):
 def MyNbitAdder(a, b, Algo, Bit):
     try:
         #convert to binary and cut off the first two indices (they dont belong to the number but indicate that it is binary)
-        
+        minusABFlag = False
+
         if a >= 0 and b >= 0:    
             a_bin = bin(a)[2:]
             b_bin = bin(b)[2:]
@@ -227,7 +260,7 @@ def MyNbitAdder(a, b, Algo, Bit):
 
         carry_over  = 0
         total_sum   = 0
-        
+        total_energy = 0
         #############################################
         approx_until = Bit #change this if u want to approximate the first bits by an approximate adder
         #############################################
@@ -244,23 +277,20 @@ def MyNbitAdder(a, b, Algo, Bit):
             sum_list.append(int(sum_element))
             total_energy += _energy
         
+            
         if a+b < 0 and not minusABFlag:
-            # sum_list.append(int(carry_over))
-            print(sum_list)
             total_sum = twoComplement2Decimal(sum_list)
         elif a+b >= 0 and a >= 0 and b >= 0:
             sum_list.append(int(carry_over))
-            print(sum_list)
             total_sum = binary2Decimal(sum_list)
         elif a+b >= 0 and (a < 0 or b < 0):
-            # sum_list.append(int(carry_over))
-            print(sum_list)
             total_sum = binary2Decimal(sum_list)
         elif minusABFlag:
             sum_list.append(int(carry_over))
-            print(sum_list)
             total_sum = binary2Decimal(sum_list)
             total_sum = total_sum * (-1)
+
+        # print(sum_list)
 
         return total_sum, total_energy #total energy in pJ!
     except Exception as e:
@@ -302,15 +332,6 @@ def binary2Decimal(bitlist):
     decimal_number = int(bitstring, 2)
     return decimal_number
 
-rows = 12
-coll = 8
-bit_list = range(0,rows)
-algo_list = ["own_Aprox","SIAFA 1","SIAFA 2","SIAFA 3","SIAFA 4","Serial Aprox","Semi Serial Aprox","own_3Memristors"]
-# algo_list = ["own_3Memristors"]
-
-calcAllNewFlag = False 
-demoDataFlag = False
-
 add_approx_list = []
 total_energy_lsit = []
 
@@ -326,6 +347,9 @@ for kernel, kernel_name in zip(kernel_list, kernelname_list):
     for indexAlgo, approxAlgo in enumerate(algo_list):
         # loop throw all Algorithm
         for indexBit, approxBit in enumerate(bit_list):
+            approx_pic = 0
+            approx_pic_x = 0
+            approx_pic_y = 0
             print(f'kernel: {kernel_name} Algo: {approxAlgo} Bit: {approxBit}')
             if not calcAllNewFlag:
                 if checkFilePresent(f'data_{kernel_name}/outputimage_{approxAlgo}_{indexBit}'):
@@ -333,9 +357,10 @@ for kernel, kernel_name in zip(kernel_list, kernelname_list):
                     continue
             if kernel_name == "blurring":
                 blurrFlag = True
-            # run calculation
+            else:
+                blurrFlag = False
+           
             approx_pic, total_energy = MyconvLUT(Y_wood, kernel, approxAlgo, approxBit, demoDataFlag=demoDataFlag, blurrFlag=blurrFlag)
-            # add_approx, max_Nbit_adder, total_energy = MyAdder(Y_einstein,Y_cap,approxAlgo,approxBit)
 
             plt.imsave(f'data_{kernel_name}/outputimage_{approxAlgo}_{indexBit}.png', approx_pic, cmap='gray')
             # plt.imsave(f'data/outputimage_{approxAlgo}_{indexBit}.png', approx_pic, cmap='gray')
