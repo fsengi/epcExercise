@@ -8,13 +8,13 @@ import math
 
 ####################################
 rows = 9
-coll = 8
-bit_list = range(1,rows)
-algo_list = ["own_Aprox","SIAFA 1","SIAFA 2","SIAFA 3","SIAFA 4","Serial Aprox","Semi Serial Aprox 8", "Semi Serial Aprox 7","own 3Memristors"]
+coll = 10
+bit_list = range(0,rows)
+algo_list = ["exact","all S1 C0", "SIAFA 1","SIAFA 2","SIAFA 3","SIAFA 4","Serial Aprox","Semi Serial Aprox 8", "Semi Serial Aprox 7","own_Aprox","own 3Memristors"]
 # algo_list = ["Serial Aprox","Semi Serial Aprox","own 3Memristors"]
 # algo_list = ["own_3Memristors"]
 
-calcAllNewFlag = True 
+calcAllNewFlag = False 
 demoDataFlag = False
 ###################################
 
@@ -43,7 +43,8 @@ energy_consumption_list.append([722.68, 709.38, 667.2, 687.02, 752.12, 729.72, 7
 energy_consumption_list.append([772.01, 715.242, 716.736, 693.766, 751.802, 700.172, 688.285, 678.696]) # Serial Aprox
 energy_consumption_list.append([2446.8, 2518.8, 2284.5, 2313.1, 2374, 2436.9, 2292.3, 2326.9]) # Semi Serial Aprox 8
 energy_consumption_list.append([823.43, 817.43, 775.39, 838.65, 852.77, 843.23, 801.27, 852.65]) # Semi Serial Aprox 7
-energy_consumption_list.append([372.55, 316.45, 320.74, 308.92, 330.8, 279.65, 294.28, 243.13]) # TODO own 3Memristors
+energy_consumption_list.append([372.55, 316.45, 320.74, 308.92, 330.8, 279.65, 294.28, 243.13]) # own 3Memristors
+energy_consumption_list.append([372.55, 316.45, 320.74, 308.92, 330.8, 279.65, 294.28, 243.13]) # TODO all S1 C0
 
 
 truthTable_s_list = []
@@ -57,6 +58,7 @@ truthTable_s_list.append([1, 1, 1, 0, 1, 1, 0, 0]) # Serial Aprox
 truthTable_s_list.append([1, 1, 1, 0, 0, 0, 0, 0]) # Semi Serial Aprox
 truthTable_s_list.append([1, 1, 1, 0, 0, 0, 0, 0]) # Semi Serial Aprox
 truthTable_s_list.append([1, 1, 1, 0, 1, 1, 1, 1]) # own 3Memristors
+truthTable_s_list.append([1, 1, 1, 1, 1, 1, 1, 1]) # all S1 C0
 
 
 truthTable_c_list = []
@@ -70,6 +72,7 @@ truthTable_c_list.append([0, 0, 0, 1, 0, 0, 1, 1]) # Serial Aprox
 truthTable_c_list.append([0, 0, 0, 1, 1, 1, 1, 1]) # Semi Serial Aprox
 truthTable_c_list.append([0, 0, 0, 1, 1, 1, 1, 1]) # Semi Serial Aprox
 truthTable_c_list.append([0, 1, 0, 1, 0, 1, 0, 1]) # own 3Memristors
+truthTable_c_list.append([0, 0, 0, 0, 0, 0, 0, 0]) # all S1 C0
 
 nameApprox_list = []
 nameApprox_list.append("exact")
@@ -82,6 +85,8 @@ nameApprox_list.append("Serial Aprox")
 nameApprox_list.append("Semi Serial Aprox 8")
 nameApprox_list.append("Semi Serial Aprox 7")
 nameApprox_list.append("own 3Memristors")
+nameApprox_list.append("all S1 C0")
+
 
 blurrKernel = np.array([[1,1,1],[1,1,1],[1,1,1]])
 edgeDetectionKernel = np.array([[0,-1,0],[-1,4,-1],[0,-1,0]])
@@ -101,7 +106,7 @@ kernelname_list.append("edge Detection")
 
 # Create a dictionary to hold the parsed data
 loaded_dict = {}
-empty_list = [0,0,0,0,0,0,0,0,0]
+empty_list = [0,0,0, 0,0,0, 0,0,0]
 
 # Populate the dictionary
 for i, name in enumerate(nameApprox_list):
