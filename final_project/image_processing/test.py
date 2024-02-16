@@ -367,6 +367,7 @@ for kernel, kernel_name in zip(kernel_list, kernelname_list):
            
             approx_pic, total_energy = MyconvLUT(Y_wood, kernel, approxAlgo, approxBit, demoDataFlag=demoDataFlag, blurrFlag=blurrFlag)
 
+            np.save(f'data_{kernel_name}/outputimage_{approxAlgo}_{indexBit}.npy', approx_pic)
             plt.imsave(f'data_{kernel_name}/outputimage_{approxAlgo}_{indexBit}.png', approx_pic, cmap='gray')
             # plt.imsave(f'data/outputimage_{approxAlgo}_{indexBit}.png', approx_pic, cmap='gray')
 
