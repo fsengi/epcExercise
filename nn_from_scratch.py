@@ -905,11 +905,10 @@ def resnet(input_image):
     K11 = np.random.randint(-2, 2, size=(24,3,3), dtype=int)
     K12 = np.random.randint(-2, 2, size=(24,3,3), dtype=int)
     K13 = np.random.randint(-2, 2, size=(24,3,3), dtype=int)
-    K14 = np.random.randint(-2, 2, size=(24,3,3), dtype=int)
+    K14 = np.random.randint(-2, 2, size=(1,3,3), dtype=int)
 
 
     # Forward pass
-    #conv1 = convolution2d(input_image, W1)
     conv0 = sunvarchannel_conv(input_image, K0, 2, 0)
     relu0 = relu(conv0)
     print(relu0.shape)
@@ -935,18 +934,12 @@ def resnet(input_image):
 
     skip_connection1 = skipconnection(relu4, skip_connection0)
     print(skip_connection1.shape)
-    # print(skip_connection1[0])
-    
-
 
     conv5 = sunvarchannel_conv(skip_connection1, K5, 2, 1)
     print(conv5.shape)
     relu5 = relu(conv5)
 
 
-
-
-    ###############################
     conv6 = sunvarchannel_conv(relu5, K6, 1, 1)
     print(conv6.shape)
     relu6 = relu(conv6)
@@ -968,11 +961,11 @@ def resnet(input_image):
     skip_connection3 = skipconnection(relu9, skip_connection2)
     print(skip_connection3.shape)
 
-##############################
+
     conv10 = sunvarchannel_conv(skip_connection3, K10, 2, 0)
     print(conv10.shape)
     relu10 = relu(conv10)
-    conv11 = sunvarchannel_conv(relu10, K11, 1, 0)
+    conv11 = sunvarchannel_conv(relu10, K11, 1, 1)
     print(conv11.shape)
     relu11 = relu(conv11)
 
@@ -980,19 +973,15 @@ def resnet(input_image):
     print(skip_connection4.shape)
     
 
-    conv12 = sunvarchannel_conv(skip_connection4, K12, 1, 0)
+    conv12 = sunvarchannel_conv(skip_connection4, K12, 1, 1)
     print(conv12.shape)
     relu12 = relu(conv12)
-    conv13 = sunvarchannel_conv(relu12, K12, 1, 0)
+    conv13 = sunvarchannel_conv(relu12, K12, 1, 1)
     print(conv13.shape)
     relu13 = relu(conv13)
 
     skip_connection5 = skipconnection(relu13, skip_connection4)
     print(skip_connection4.shape)
-
-
-
-################################
 
 
     flattened_output = skip_connection5.flatten()
@@ -1003,46 +992,6 @@ def resnet(input_image):
     
     # Apply softmax for classification
     output_probabilities = softmax(fc_output)
-
-    # conv1 = convolution2dpadding(input_image, W1, 2)
-    # relu1 = relu(conv1)
-    # # print(input_image)
-    # print(np.max(input_image))
-    # # print(relu1)
-    # print(np.shape(relu1))
-    # print(np.max(relu1))
-
-    # relu1 = max_pooling(relu1)
-    
-    # conv2 = convolution2d(relu1,W2)
-    # relu2 = relu(conv2)
-
-
-    # # print(relu2)
-    # print(np.shape(relu2))
-    # print(np.max(relu2))
-
-    # relu2 = max_pooling(relu2)
-    
-    # conv3 = convolution2d(relu2,W3)
-    # relu3 = relu(conv3)
-
-    # # print(relu2)
-    # print(np.shape(relu3))
-    # print(np.max(relu3))
-    
-    # conv4 = convolution2d(relu3,W4)
-    # relu4 = relu(conv4)
-    
-    # # Flatten the output for fully connected layer
-    # flattened_output = relu4.flatten()
-    
-    # # Fully connected layer
-    # fc_weights = initialize_weights((flattened_output.shape[0], 10))
-    # fc_output = np.dot(flattened_output, fc_weights)
-    
-    # # Apply softmax for classification
-    # output_probabilities = softmax(fc_output)
     
     return output_probabilities
 
