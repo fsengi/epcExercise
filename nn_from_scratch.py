@@ -536,8 +536,8 @@ def initialize_bias(shape):
 # print(np.shape(Wt))
 
 
-import torch
-import torch.nn as nn
+# import torch
+# import torch.nn as nn
 
 # print(imi)
 # print(np.shape(imi))
@@ -873,6 +873,13 @@ image = np.random.randint(-5,5, size=(3,40,40), dtype=int)
 
 # todo = sunvarchannel_conv(image, kernel, stride, padding)
 
+def skipconnection(current, old):
+    if np.max(old) != 0:
+        tmp = ((current + old)/(np.max(old+ current)/100))
+    else: 
+        tmp = current + old
+    return np.round(tmp).astype(int)
+
 # print(todo.shape)
 # print(todo[3])
 # print(tot_enegery)
@@ -889,7 +896,16 @@ def resnet(input_image):
     K2 = np.random.randint(-2, 2, size=(6,3,3), dtype=int)
     K3 = np.random.randint(-2, 2, size=(6,3,3), dtype=int)
     K4 = np.random.randint(-2, 2, size=(6,3,3), dtype=int)
-    K5 = np.random.randint(-2, 2, size=(1,3,3), dtype=int)
+    K5 = np.random.randint(-2, 2, size=(12,3,3), dtype=int)
+    K6 = np.random.randint(-2, 2, size=(12,3,3), dtype=int)
+    K7 = np.random.randint(-2, 2, size=(12,3,3), dtype=int)
+    K8 = np.random.randint(-2, 2, size=(12,3,3), dtype=int)
+    K9 = np.random.randint(-2, 2, size=(12,3,3), dtype=int)
+    K10 = np.random.randint(-2, 2, size=(24,3,3), dtype=int)
+    K11 = np.random.randint(-2, 2, size=(24,3,3), dtype=int)
+    K12 = np.random.randint(-2, 2, size=(24,3,3), dtype=int)
+    K13 = np.random.randint(-2, 2, size=(24,3,3), dtype=int)
+    K14 = np.random.randint(-2, 2, size=(24,3,3), dtype=int)
 
 
     # Forward pass
@@ -906,9 +922,9 @@ def resnet(input_image):
     print(conv2.shape)
     relu2 = relu(conv2)
 
-    skip_connection0 = relu2 + relu0
+    skip_connection0 = skipconnection(relu2, relu0)
     print(skip_connection0.shape)
-    # print(skip_connection0[0])
+    
 
     conv3 = sunvarchannel_conv(skip_connection0, K3, 1, 1)
     print(conv3.shape)
@@ -917,14 +933,69 @@ def resnet(input_image):
     print(conv4.shape)
     relu4 = relu(conv4)
 
-    skip_connection1 = relu4 + skip_connection0
+    skip_connection1 = skipconnection(relu4, skip_connection0)
     print(skip_connection1.shape)
     # print(skip_connection1[0])
+    
 
-    conv5 = sunvarchannel_conv(skip_connection1, K5, 1, 1)
+
+    conv5 = sunvarchannel_conv(skip_connection1, K5, 2, 1)
     print(conv5.shape)
     relu5 = relu(conv5)
-    flattened_output = relu5.flatten()
+
+
+
+
+    ###############################
+    conv6 = sunvarchannel_conv(relu5, K6, 1, 1)
+    print(conv6.shape)
+    relu6 = relu(conv6)
+    conv7 = sunvarchannel_conv(relu6, K7, 1, 1)
+    print(conv7.shape)
+    relu7 = relu(conv7)
+
+    skip_connection2 = skipconnection(relu5, relu7)
+    print(skip_connection2.shape)
+    
+
+    conv8 = sunvarchannel_conv(skip_connection2, K8, 1, 1)
+    print(conv8.shape)
+    relu8 = relu(conv8)
+    conv9 = sunvarchannel_conv(relu8, K9, 1, 1)
+    print(conv9.shape)
+    relu9 = relu(conv9)
+
+    skip_connection3 = skipconnection(relu9, skip_connection2)
+    print(skip_connection3.shape)
+
+##############################
+    conv10 = sunvarchannel_conv(skip_connection3, K10, 2, 0)
+    print(conv10.shape)
+    relu10 = relu(conv10)
+    conv11 = sunvarchannel_conv(relu10, K11, 1, 0)
+    print(conv11.shape)
+    relu11 = relu(conv11)
+
+    skip_connection4 = skipconnection(relu10, relu11)
+    print(skip_connection4.shape)
+    
+
+    conv12 = sunvarchannel_conv(skip_connection4, K12, 1, 0)
+    print(conv12.shape)
+    relu12 = relu(conv12)
+    conv13 = sunvarchannel_conv(relu12, K12, 1, 0)
+    print(conv13.shape)
+    relu13 = relu(conv13)
+
+    skip_connection5 = skipconnection(relu13, skip_connection4)
+    print(skip_connection4.shape)
+
+
+
+################################
+
+
+    flattened_output = skip_connection5.flatten()
     print(flattened_output.shape)
 
     fc_weights = initialize_weights((flattened_output.shape[0], 10))
@@ -986,3 +1057,8 @@ print(tot_enegery)
 
 
 # Implement regularizing skip connection with the approx adder used for the addition
+
+# teststiii = np.ones((4,4))/2
+# pk = teststiii*34523
+# print(skipconnection(teststiii, pk))
+# print(teststiii)
