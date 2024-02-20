@@ -566,16 +566,21 @@ with open('resnet.csv', 'w', newline='') as csvfile:
     for name in nameApprox_list:
         algorithm = name
         for i in range(9):
-            bit = i
-            tot_enegery = 0 
-            resnet(image)
-            
-            # Print bit and tot_energy
-            print(bit)
-            print(tot_enegery)
+            try:
+                bit = i
+                tot_enegery = 0 
+                resnet(image)
+                
+                # Print bit and tot_energy
+                print(bit)
+                print(tot_enegery)
+                print(name)
 
-            # Write bit and tot_energy to the CSV file
-            csv_writer.writerow([name, bit, tot_enegery])
+                # Write bit and tot_energy to the CSV file
+                csv_writer.writerow([name, bit, tot_enegery])
+            except Exception as e:
+                print('error at', name, bit)
+                continue
 
 
 
@@ -590,13 +595,18 @@ with open('convnet.csv', 'w', newline='') as csvfile:
     for name in nameApprox_list:
         algorithm = name
         for i in range(9):
-            bit = i
-            tot_enegery = 0 
-            convolutional_net(image)
-            
-            # Print bit and tot_energy
-            print(bit)
-            print(tot_enegery)
+            try:
+                bit = i
+                tot_enegery = 0 
+                convolutional_net(image)
+                
+                # Print bit and tot_energy
+                print(bit)
+                print(tot_enegery)
+                print(name)
 
-            # Write bit and tot_energy to the CSV file
-            csv_writer.writerow([name, bit, tot_enegery])
+                # Write bit and tot_energy to the CSV file
+                csv_writer.writerow([name, bit, tot_enegery])
+            except Exception as e:
+                print('error at', name, bit)
+                continue
