@@ -523,19 +523,80 @@ def convolutional_net(input_image):
 
 
 
-algorithm = "own_Aprox"
-bit = 0
 image = np.random.randint(-5,5, size=(3,40,40), dtype=int)
 
 
-tot_enegery = 0
-prob = resnet(image)
-print(prob)
-print(tot_enegery)
+# tot_enegery = 0
+# prob = resnet(image)
+# print(prob)
+# print(tot_enegery)
 
-image = np.random.randint(-5,5, size=(3,52,52), dtype=int)
+# image = np.random.randint(-5,5, size=(3,52,52), dtype=int)
 
-tot_enegery = 0
-prob = convolutional_net(image)
-print(prob)
-print(tot_enegery)
+# tot_enegery = 0
+# prob = convolutional_net(image)
+# print(prob)
+# print(tot_enegery)
+
+
+
+# for i in range(9):
+#     bit = i
+#     tot_enegery = 0
+#     resnet(image)
+#     print(bit)
+#     print(tot_enegery)
+
+
+
+
+
+
+import csv
+
+# Open a CSV file in write mode
+with open('resnet.csv', 'w', newline='') as csvfile:
+    # Create a CSV writer object
+    csv_writer = csv.writer(csvfile)
+
+    # Write header row
+    csv_writer.writerow(['Approx. Algo', 'Bit', 'Total Energy'])
+
+    # Loop through the range
+    for name in nameApprox_list:
+        algorithm = name
+        for i in range(9):
+            bit = i
+            tot_enegery = 0 
+            resnet(image)
+            
+            # Print bit and tot_energy
+            print(bit)
+            print(tot_enegery)
+
+            # Write bit and tot_energy to the CSV file
+            csv_writer.writerow([name, bit, tot_enegery])
+
+
+
+with open('convnet.csv', 'w', newline='') as csvfile:
+    # Create a CSV writer object
+    csv_writer = csv.writer(csvfile)
+
+    # Write header row
+    csv_writer.writerow(['Approx. Algo', 'Bit', 'Total Energy'])
+
+    # Loop through the range
+    for name in nameApprox_list:
+        algorithm = name
+        for i in range(9):
+            bit = i
+            tot_enegery = 0 
+            convolutional_net(image)
+            
+            # Print bit and tot_energy
+            print(bit)
+            print(tot_enegery)
+
+            # Write bit and tot_energy to the CSV file
+            csv_writer.writerow([name, bit, tot_enegery])
