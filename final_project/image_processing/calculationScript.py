@@ -17,7 +17,8 @@ demoDataFlag = False
 ###################################
 
 # wood_img = io.imread("wood.jpg")
-wood_img = io.imread("final_project/image_processing/wood.jpg")
+wood_img = io.imread("resources/cameraman.jpg", )
+# wood_img = io.imread("final_project/image_processing/wood.jpg")
 print(wood_img.shape)
 
 R_1 = wood_img[:, :, 0] 
