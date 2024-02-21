@@ -10,9 +10,9 @@ import math
 rows = 8
 bit_list = range(0,rows)
 
-algo_list = ["exact Serial [1]","Serial Aprox [2]", "SIAFA 1 [3]","SIAFA 2 [4]","SIAFA 3 [5]","SIAFA 4 [6]","exact Semi Serial [7]","Serial Aprox [8]", "exact parallel [9]","exact Semi Parallel [10]","own Aprox [11]", "own 3Memristors [12]"]
+algo_list = ["exact Serial [1]","Serial Aprox [2]", "SIAFA 1 [3]","SIAFA 2 [4]","SIAFA 3 [5]","SIAFA 4 [6]","exact Semi Serial [7]","Serial Aprox [8]", "exact parallel [9]","exact Semi Parallel [10]","own Aprox [11]","C51 paper [13]"]
 
-calcAllNewFlag = True 
+calcAllNewFlag = False 
 demoDataFlag = False
 ###################################
 
@@ -44,7 +44,8 @@ energy_consumption_list.append([828.43, 817.43, 775.39, 838.65, 852.77, 843.23, 
 energy_consumption_list.append([828.43, 817.43, 775.39, 838.65, 852.77, 843.23, 801.27, 852.65]) # exact Parallel [9]
 energy_consumption_list.append([2068.7, 1962.8, 1853.7, 1797.8, 1982.9, 1893.6, 1882, 1811.2]) # exact Semi Parallel [10]
 energy_consumption_list.append([696.69, 661.61, 641.48, 611.95, 642.26, 612.56, 581.57, 568.23]) # own Aprox [11]
-energy_consumption_list.append([372.55, 316.45, 320.74, 308.92, 330.8, 279.65, 294.28, 243.13]) # own 3Memristors [12]
+# energy_consumption_list.append([372.55, 316.45, 320.74, 308.92, 330.8, 279.65, 294.28, 243.13]) # own 3Memristors [12]
+energy_consumption_list.append([0, 0, 0, 0, 0, 0, 0, 0]) # C51 paper [13]
 
 
 truthTable_s_list = []
@@ -59,7 +60,8 @@ truthTable_s_list.append([1, 1, 1, 0, 0, 0, 0, 0]) # Semi Serial Aprox [8]
 truthTable_s_list.append([0, 1, 1, 0, 1, 0, 0, 1]) # exact parallel [9]
 truthTable_s_list.append([0, 1, 1, 0, 1, 0, 0, 1]) # exact Semi Parallel [10]
 truthTable_s_list.append([1, 1, 1, 1, 1, 1, 0, 1]) # own Aprox [11]
-truthTable_s_list.append([1, 1, 1, 0, 1, 1, 1, 1]) # own 3Memristors [12]
+# truthTable_s_list.append([1, 1, 1, 0, 1, 1, 1, 1]) # own 3Memristors [12]
+truthTable_s_list.append([1, 1, 1, 0, 0, 0, 0, 0]) # C51 paper [13]
 
 
 truthTable_c_list = []
@@ -74,7 +76,8 @@ truthTable_c_list.append([0, 0, 0, 1, 1, 1, 1, 1]) # Serial Aprox [8]
 truthTable_c_list.append([0, 0, 0, 1, 0, 1, 1, 1]) # exact parallel [9]
 truthTable_c_list.append([0, 0, 0, 1, 0, 1, 1, 1]) # exact Semi Parallel [10]
 truthTable_c_list.append([0, 1, 0, 1, 0, 1, 1, 1]) # own Aprox [11]
-truthTable_c_list.append([0, 1, 0, 1, 0, 1, 0, 1]) # own 3Memristors [12]
+# truthTable_c_list.append([0, 1, 0, 1, 0, 1, 0, 1]) # own 3Memristors [12]
+truthTable_c_list.append([0, 0, 0, 1, 1, 1, 1, 1]) # C51 paper [13]
 
 nameApprox_list = []
 nameApprox_list.append("exact Serial [1]")
@@ -88,21 +91,21 @@ nameApprox_list.append("Serial Aprox [8]")
 nameApprox_list.append("exact parallel [9]")
 nameApprox_list.append("exact Semi Parallel [10]")
 nameApprox_list.append("own Aprox [11]")
-nameApprox_list.append("own 3Memristors [12]")
+# nameApprox_list.append("own 3Memristors [12]")
+nameApprox_list.append("C51 paper [13]")
 
-blurrKernel = np.array([[1,2,1],[2,4,2],[1,2,1]])
 edgeDetectionKernel = np.array([[0,-1,0],[-1,4,-1],[0,-1,0]])
+blurrKernel = np.array([[1,2,1],[2,4,2],[1,2,1]])
 
 kernel_list = []
 kernel_list.append(blurrKernel)
 kernel_list.append(edgeDetectionKernel)
 
 kernelname_list = []
-kernelname_list.append("blurring")
 kernelname_list.append("edge Detection")
+kernelname_list.append("blurring")
 
-# write data to json file 
-
+# write data to json file
 # Create a dictionary to hold the parsed data
 loaded_dict = {}
 empty_list = [0,0,0, 0,0,0, 0,0,0]
@@ -119,7 +122,7 @@ with open(json_file_path, 'w') as json_file:
 
 # assign the correct values for carry sum and energy acccording to choosen Algorithm
     
-def Adder(a, b, c, approxAlgo = "exact Serial [1]"):
+def Adder(a, b, c, approxAlgo = "exact Semi Parallel [10]"):
     if a==0 and b==0 and c==0:
         s = loaded_dict[approxAlgo]["s"][0]
         c_out = loaded_dict[approxAlgo]["c"][0]
@@ -271,17 +274,16 @@ def MyNbitAdder(a, b, Algo, Bit):
         sum_list = []
         #we want to do a bitwise addition
         for index, (bit1, bit2) in enumerate(zip(rev_a, rev_b) ):
-            if index <= approx_until:
+            if index <= approx_until or 'exact' in Algo:
                 #use approx_adder
-                sum_element, carry_over, energy = Adder(int(bit1), int(bit2), int(carry_over), Algo) 
+                sum_element, carry_over, energy = Adder(a=int(bit1), b=int(bit2), c=int(carry_over), approxAlgo=Algo) 
             else:
                 #use exact_adder
-                sum_element, carry_over, energy = Adder(int(bit1), int(bit2), int(carry_over))
+                    sum_element, carry_over, energy = Adder(a=int(bit1), b=int(bit2), c=int(carry_over))    
             
             sum_list.append(int(sum_element))
             total_energy += energy
         
-            
         if a+b < 0 and not minusABFlag:
             total_sum = twoComplement2Decimal(sum_list)
         elif a+b >= 0 and a >= 0 and b >= 0:
