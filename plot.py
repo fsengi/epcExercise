@@ -4,12 +4,15 @@ import matplotlib.pyplot as plt
 # Read CSV file into a DataFrame
 df = pd.read_csv('resnet.csv')
 
+# Set the global font size
+plt.rcParams.update({'font.size': 14})
 
 # Set the size of the plot
 plt.figure(figsize=(20, 12))
 
 # Separate data based on 'Approx. Algo'
 algorithms = df['Approx. Algo'].unique()
+
 
 # Plot each algorithm separately
 for algo in algorithms:
@@ -18,13 +21,13 @@ for algo in algorithms:
     plt.plot(algo_data['Bit'], algo_data['Total Energy'], label=algo, linewidth=0.5)
 
 # Set labels and title
-plt.xlabel('Bit')
-plt.ylabel('Total Energy')
-plt.title('Total Energy vs. Bit for Different Algorithms')
+plt.xlabel('Number of approximate bits')
+plt.ylabel('Total Energy[pJ]')
+plt.title('Total energy for varying number of approximate bits for multiple algorithms')
 
 # Display legend
 plt.legend()
 
 # Save the plot to a file
-plt.savefig('resnetplot.png')
+plt.savefig('testplotly.png')
 

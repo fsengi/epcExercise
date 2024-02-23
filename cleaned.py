@@ -1,60 +1,6 @@
 import numpy as np
 
 
-def max_pooling(input_array, pool_size=(2, 2)):
-    """
-    Applies max pooling to a 2D array.
-
-    Parameters:
-    - input_array: 2D numpy array
-    - pool_size: Tuple of two integers, specifying the size of the pooling window
-
-    Returns:
-    - 2D numpy array after max pooling
-    """
-    if len(input_array.shape) != 2:
-        raise ValueError("Input array must be 2D")
-
-    rows, cols = input_array.shape
-    pool_rows, pool_cols = pool_size
-
-    # Calculate the output shape after pooling
-    out_rows = rows // pool_rows
-    out_cols = cols // pool_cols
-
-    # Reshape the input array to facilitate pooling
-    reshaped_array = input_array[:out_rows * pool_rows, :out_cols * pool_cols].reshape(
-        out_rows, pool_rows, out_cols, pool_cols
-    )
-
-    # Apply max pooling along the specified axis
-    pooled_array = reshaped_array.max(axis=(1, 3))
-
-    return pooled_array
-
-
-def relu(x):
-    res = np.zeros((np.shape(x)[0], np.shape(x)[1], np.shape(x)[2]), dtype=int)
-    for i in range(np.shape(x)[0]):
-        for j in range(np.shape(x)[1]):
-            for k in range(np.shape(x)[2]):
-                res[i,j,k] = np.maximum(0,x[i,j,k])
-    return res
-
-def softmax(x):
-    exp_x = np.exp(x - np.max(x))
-    return exp_x / exp_x.sum(axis=0, keepdims=True)
-
-def sigmoid(x):
-    return 1 / (1 + np.exp(-x))
-
-def initialize_weights(shape):
-    return np.random.randint(-1, 2, size=shape, dtype=int)
-
-def initialize_bias(shape):
-    return np.zeros(shape, dtype=int)
-
-
 # pattern for aproximation and exact adder
 energy_consumption_list = []
 energy_consumption_list.append([2068.7, 1962.8, 1853.7, 1797.8, 1982.9, 1893.6, 1882, 1811.2]) # exact adder
@@ -91,12 +37,12 @@ truthTable_c_list.append([0, 0, 0, 1, 1, 1, 1, 1]) # Semi Serial Aprox
 nameApprox_list = []
 nameApprox_list.append("exact")
 nameApprox_list.append("own_Aprox")
-nameApprox_list.append("SIAFA 1")
-nameApprox_list.append("SIAFA 2")
-nameApprox_list.append("SIAFA 3")
-nameApprox_list.append("SIAFA 4")
-nameApprox_list.append("Serial Aprox")
-nameApprox_list.append("Semi Serial Aprox")
+# nameApprox_list.append("SIAFA 1")
+# nameApprox_list.append("SIAFA 2")
+# nameApprox_list.append("SIAFA 3")
+# nameApprox_list.append("SIAFA 4")
+# nameApprox_list.append("Serial Aprox")
+# nameApprox_list.append("Semi Serial Aprox")
 
 
 
@@ -115,8 +61,6 @@ json_file_path = 'data.json'
 # Write the data to the JSON file
 with open(json_file_path, 'w') as json_file:
     json.dump(parsed_data, json_file, indent=4)
-
-
 
 
 def Adder(a, b, c, approxAlgo = 'exact'):
@@ -154,32 +98,7 @@ def Adder(a, b, c, approxAlgo = 'exact'):
         energy_consumption = loaded_dict[approxAlgo]["energy"][7]
     return s, c_out, energy_consumption
 
-def My_Multiplier(a,b, approxAlgo, approxBit, blurrFlag=False):
-    energy = 0
-    if a > b:
-        res = a
-        multiplier = a
-        multcount = b
-    else:
-        res = b
-        multiplier = b
-        multcount = a
-    
-    for i in range(1, multcount):
-        res, e  = MyNbitAdder(res, multiplier, approxAlgo, approxBit)
-        energy += e
-    if blurrFlag:
-        res = res >> 3
-    return res, energy
 
-
-def MySum(matrix, energy, approxAlgo, approxBit):
-    res = 0
-    for i in range(matrix.shape[0]):
-        for j in range(matrix.shape[1]):
-            res, e = MyNbitAdder(res, int(matrix[i,j]), approxAlgo, approxBit)
-        energy += e
-    return res, energy
 
 #In 8 bit adder, lower 3 bits are implemented with approximate adder and rest of the with exact adder
 def SunnyMyNbitAdder(a, b, Algo, Bit):
@@ -234,6 +153,9 @@ with open(json_file_path, 'r') as json_file:
 
 def SunnyMyWrapper(a,b, alg, bit):
     global tot_enegery
+    global num_steps
+    tmp = 5*bit + 17*(8-bit)  # Our own algorithm takes 5 timesteps per one bit addition, the exact algorithm we are comparing to takes 17 timsteps
+    num_steps += tmp
     if (((a + b) < 127) and ((a + b) > -128)):
         tot_enegery += SunnyMyNbitAdder(a+ 128,b+ 128,alg, bit)[1]
         return SunnyMyNbitAdder(a+ 128,b+ 128, alg, bit)[0] - 256
@@ -317,6 +239,28 @@ def skipconnection(current, old):
     else: 
         tmp = current + old
     return np.round(tmp).astype(int)
+
+
+def relu(x):
+    res = np.zeros((np.shape(x)[0], np.shape(x)[1], np.shape(x)[2]), dtype=int)
+    for i in range(np.shape(x)[0]):
+        for j in range(np.shape(x)[1]):
+            for k in range(np.shape(x)[2]):
+                res[i,j,k] = np.maximum(0,x[i,j,k])
+    return res
+
+def softmax(x):
+    exp_x = np.exp(x - np.max(x))
+    return exp_x / exp_x.sum(axis=0, keepdims=True)
+
+def sigmoid(x):
+    return 1 / (1 + np.exp(-x))
+
+def initialize_weights(shape):
+    return np.random.randint(-1, 2, size=shape, dtype=int)
+
+def initialize_bias(shape):
+    return np.zeros(shape, dtype=int)
 
 
 
@@ -555,7 +499,7 @@ image = np.random.randint(-5,5, size=(3,40,40), dtype=int)
 import csv
 
 # Open a CSV file in write mode
-with open('resnet.csv', 'w', newline='') as csvfile:
+with open('testout1.csv', 'w', newline='') as csvfile:
     # Create a CSV writer object
     csv_writer = csv.writer(csvfile)
 
@@ -569,6 +513,7 @@ with open('resnet.csv', 'w', newline='') as csvfile:
             try:
                 bit = i
                 tot_enegery = 0 
+                num_steps = 0
                 resnet(image)
                 
                 # Print bit and tot_energy
@@ -577,14 +522,14 @@ with open('resnet.csv', 'w', newline='') as csvfile:
                 print(name)
 
                 # Write bit and tot_energy to the CSV file
-                csv_writer.writerow([name, bit, tot_enegery])
+                csv_writer.writerow([name, bit, tot_enegery, num_steps])
             except Exception as e:
                 print('error at', name, bit)
                 continue
 
 
 
-with open('convnet.csv', 'w', newline='') as csvfile:
+with open('testout.csv', 'w', newline='') as csvfile:
     # Create a CSV writer object
     csv_writer = csv.writer(csvfile)
 
@@ -598,6 +543,7 @@ with open('convnet.csv', 'w', newline='') as csvfile:
             try:
                 bit = i
                 tot_enegery = 0 
+                num_steps = 0
                 convolutional_net(image)
                 
                 # Print bit and tot_energy
@@ -606,7 +552,7 @@ with open('convnet.csv', 'w', newline='') as csvfile:
                 print(name)
 
                 # Write bit and tot_energy to the CSV file
-                csv_writer.writerow([name, bit, tot_enegery])
+                csv_writer.writerow([name, bit, tot_enegery, num_steps])
             except Exception as e:
                 print('error at', name, bit)
                 continue
