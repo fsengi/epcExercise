@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 df = pd.read_csv('convnet.csv')
 
 # Set the global font size
-plt.rcParams.update({'font.size': 14})
+plt.rcParams.update({'font.size': 16})
 
 # Set the size of the plot
 plt.figure(figsize=(20, 12))
