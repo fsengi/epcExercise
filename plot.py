@@ -2,7 +2,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 # Read CSV file into a DataFrame
-df = pd.read_csv('resnet.csv')
+df = pd.read_csv('convnet.csv')
 
 # Set the global font size
 plt.rcParams.update({'font.size': 14})
@@ -29,5 +29,5 @@ plt.title('Total energy for varying number of approximate bits for multiple algo
 plt.legend()
 
 # Save the plot to a file
-plt.savefig('testplotly.png')
+plt.savefig('convnet.png')
 
