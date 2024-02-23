@@ -37,12 +37,12 @@ truthTable_c_list.append([0, 0, 0, 1, 1, 1, 1, 1]) # Semi Serial Aprox
 nameApprox_list = []
 nameApprox_list.append("exact")
 nameApprox_list.append("own_Aprox")
-# nameApprox_list.append("SIAFA 1")
-# nameApprox_list.append("SIAFA 2")
-# nameApprox_list.append("SIAFA 3")
-# nameApprox_list.append("SIAFA 4")
-# nameApprox_list.append("Serial Aprox")
-# nameApprox_list.append("Semi Serial Aprox")
+nameApprox_list.append("SIAFA 1")
+nameApprox_list.append("SIAFA 2")
+nameApprox_list.append("SIAFA 3")
+nameApprox_list.append("SIAFA 4")
+nameApprox_list.append("Serial Aprox")
+nameApprox_list.append("Semi Serial Aprox")
 
 
 
@@ -98,7 +98,8 @@ def Adder(a, b, c, approxAlgo = 'exact'):
         energy_consumption = loaded_dict[approxAlgo]["energy"][7]
     return s, c_out, energy_consumption
 
-
+#This N-bit adder implementation is mostly equivalent to the one from the exercise, 
+#it has been expanded to allow for variable algorithms and takes the approximated bitwidth as a parameter now
 
 #In 8 bit adder, lower 3 bits are implemented with approximate adder and rest of the with exact adder
 def SunnyMyNbitAdder(a, b, Algo, Bit):
@@ -151,6 +152,10 @@ with open(json_file_path, 'r') as json_file:
     loaded_dict = json.load(json_file)
 
 
+
+#The Wrapper function's main purpose is to ensure the values stay within our supported value range of -128 to 127 as we are working with signed int8
+#It also aids in adding up the energy needed for each addition and counting the number of compute steps necessary
+
 def SunnyMyWrapper(a,b, alg, bit):
     global tot_enegery
     global num_steps
@@ -163,6 +168,8 @@ def SunnyMyWrapper(a,b, alg, bit):
         tot_enegery += SunnyMyNbitAdder(a+ 128,b+ 128,alg, bit)[1]
         return 127
 
+
+#The Mult by Add function utilizes our custom adder to perform multiplication by looping over addition 
 def sunMult_by_add(a,b):
     tmp = 0
     for i in range(np.abs(b)):
@@ -175,7 +182,9 @@ def sunMult_by_add(a,b):
         return 0
 
 
-
+#This convolution with variable input and output channels, which supports stride of up to two, padding and even uses bitshift for more 
+# efficient writing to the result array. It utilizes the custom adders trough the Wrapper function of course and the multiplication at
+# heart of the kernel is also performed by the Mult by Add function.
 def sunvarchannel_conv(image, kernel, stride, padding):
 
     #stride to bitshift
@@ -191,8 +200,6 @@ def sunvarchannel_conv(image, kernel, stride, padding):
     image_padded = np.zeros((in_channels, image.shape[1]+2*padding,image.shape[2]+2*padding), dtype=int)
     for c in range(in_channels):
         image_padded[c] = np.pad(image[c], ((padding, padding), (padding, padding)), mode='constant')
-
-    # print(image_padded[0])
 
     # Get dimensions of the padded image and kernel
     image_height, image_width = image_padded.shape[1], image_padded.shape[2]
@@ -232,15 +239,16 @@ def sunvarchannel_conv(image, kernel, stride, padding):
 
 
 
-
+# This fucntion serves to build the skip connections in the Resnet implementation and also serves the secondary purpose of regularizing
+# the output at every skip connection, since the acitvations tend to explode past our supported value range otherwise
 def skipconnection(current, old):
-    if np.max(old) != 0:
+    if np.max(old+ current) != 0:
         tmp = ((current + old)/(np.max(old+ current)/100))
     else: 
         tmp = current + old
     return np.round(tmp).astype(int)
 
-
+# This fuctions applies a Relu to all acitivations
 def relu(x):
     res = np.zeros((np.shape(x)[0], np.shape(x)[1], np.shape(x)[2]), dtype=int)
     for i in range(np.shape(x)[0]):
@@ -249,25 +257,23 @@ def relu(x):
                 res[i,j,k] = np.maximum(0,x[i,j,k])
     return res
 
+# This softmax fucntion is used for the final classification after the fully connected layer.
 def softmax(x):
     exp_x = np.exp(x - np.max(x))
     return exp_x / exp_x.sum(axis=0, keepdims=True)
 
+# This sigmoid function could be used for an alternatetive activation function, or for the per pixel classification (semantic segmentation) in a Unet.
 def sigmoid(x):
     return 1 / (1 + np.exp(-x))
 
 def initialize_weights(shape):
-    return np.random.randint(-1, 2, size=shape, dtype=int)
+    return np.random.randint(-2, 2, size=shape, dtype=int)
 
-def initialize_bias(shape):
-    return np.zeros(shape, dtype=int)
-
-
-
+# The following resnet is defined this way. First all needed weights are initialized randomly. Then the network architecture is described.
+# The random weight initialization is not perfect, but since trained weights would require training and this is only an inference simulation
+# I saw no practicable way to use better weights. 
 
 def resnet(input_image):
-    # algorithm = "own_Aprox"
-    # bit = 4
 
     # Initialize Weights
     K0 = np.random.randint(-2, 2, size=(6,5,5), dtype=int)
@@ -375,6 +381,9 @@ def resnet(input_image):
     return output_probabilities
 
 
+# The following convolutional net works under similar constraints to the resnet above. It however does vary in architecture,
+# since it is a more classic simplistic convnet without skipconnections. With this application I have also opted for a broader
+# funnel like architecture to improve generalization, since this prevents the model from learning irrelevent details to some degree
 
 def convolutional_net(input_image):
 
@@ -470,31 +479,7 @@ def convolutional_net(input_image):
 image = np.random.randint(-5,5, size=(3,40,40), dtype=int)
 
 
-# tot_enegery = 0
-# prob = resnet(image)
-# print(prob)
-# print(tot_enegery)
-
-# image = np.random.randint(-5,5, size=(3,52,52), dtype=int)
-
-# tot_enegery = 0
-# prob = convolutional_net(image)
-# print(prob)
-# print(tot_enegery)
-
-
-
-# for i in range(9):
-#     bit = i
-#     tot_enegery = 0
-#     resnet(image)
-#     print(bit)
-#     print(tot_enegery)
-
-
-
-
-
+#The following code is a script to measure all combinations of variables
 
 import csv
 
