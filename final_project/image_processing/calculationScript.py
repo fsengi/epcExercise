@@ -82,11 +82,16 @@ kernelname_list.append("edge Detection")
 # write data to json file
 # Create a dictionary to hold the parsed data
 loaded_dict = {}
+results_dict = {}
 
 # Populate the dictionary
 for i, name in enumerate(nameApprox_list):
-    loaded_dict[name] = {"s": truthTable_s_list[i], "c": truthTable_c_list[i], "energy": energy_consumption_list[i], "ssi": list(), "psnr": list(), "energy_con": list()}
+    loaded_dict[name] = {"s": truthTable_s_list[i], "c": truthTable_c_list[i], "energy": energy_consumption_list[i]}
 
+for j, kernel in enumerate(kernelname_list):
+    results_dict[kernel] = {}
+    for i, name in enumerate(nameApprox_list):
+        results_dict[kernel][name] = {"ssi": list(), "psnr": list(), "energy_con": list()}
 
 def Adder(a, b, c, approxAlgo = "exact Semi Parallel [10]"):
     if a==0 and b==0 and c==0:
@@ -387,20 +392,20 @@ def main():
                                                     blurrFlag=blurrFlag)
                 try:
                     data_range = approx_pic.max() - approx_pic.min()
-                    loaded_dict[approxAlgo]["ssi"].append(ssim(exact_ownconv, approx_pic, data_range=data_range))
-                    loaded_dict[approxAlgo]["psnr"].append(psnr(exact_ownconv, approx_pic, data_range=data_range))
-                    loaded_dict[approxAlgo]["energy_con"].append(total_energy)
+                    results_dict[kernel_name][approxAlgo]["ssi"].append(ssim(exact_ownconv, approx_pic, data_range=data_range))
+                    results_dict[kernel_name][approxAlgo]["psnr"].append(psnr(exact_ownconv, approx_pic, data_range=data_range))
+                    results_dict[kernel_name][approxAlgo]["energy_con"].append(total_energy)
                 except Exception as e:
                     print(f'error {e}')
                 else:
-                    print(f'psnr: {loaded_dict[approxAlgo]["psnr"][approxBit]} ssim: {loaded_dict[approxAlgo]["ssi"][approxBit]}')
+                    print(f'psnr: {results_dict[kernel_name][approxAlgo]["psnr"][approxBit]} ssim: {results_dict[kernel_name][approxAlgo]["ssi"][approxBit]}')
 
                 np.save(f'{path}data_{kernel_name}/outputimage_{approxAlgo}_{approxBit}.npy', approx_pic)
                 plt.imsave(f'{path}data_{kernel_name}/outputimage_{approxAlgo}_{approxBit}.png', approx_pic, cmap='gray')
                 
                 # Write the data to the JSON file
                 with open(f'{path}results.json', 'w') as json_file:
-                    json.dump(loaded_dict, json_file, indent=4)
+                    json.dump(results_dict, json_file, indent=4)
 
 if __name__ == "__main__":
     main()
