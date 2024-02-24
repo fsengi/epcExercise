@@ -1,35 +1,13 @@
 import os
 import json
-from skimage import io
-import matplotlib.pyplot as plt
-import numpy as np
-import json 
 import math
-
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy import signal
+from skimage.metrics import structural_similarity as ssim
+from skimage.metrics import peak_signal_noise_ratio as psnr
+from skimage import io
 ####################################
-rows = 8
-bit_list = range(0,rows)
-
-algo_list = ["exact Serial [1]","Serial Aprox [2]", "SIAFA 1 [3]","SIAFA 2 [4]","SIAFA 3 [5]","SIAFA 4 [6]","exact Semi Serial [7]","Serial Aprox [8]", "exact parallel [9]","exact Semi Parallel [10]","own Aprox [11]","C51 paper [13]"]
-
-calcAllNewFlag = False 
-demoDataFlag = False
-###################################
-
-# wood_img = io.imread("wood.jpg")
-wood_img = io.imread("resources/cameraman.jpg", )
-# wood_img = io.imread("final_project/image_processing/wood.jpg")
-print(wood_img.shape)
-
-R_1 = wood_img[:, :, 0] 
-G_1 = wood_img[:, :, 1]
-B_1 = wood_img[:, :, 2]
-
-#formula for converting colour(RGB) to Gray Image scale Image
-Y_wood = (0.299 * np.array(R_1)) + (0.587 * np.array(G_1)) + (0.114 * np.array(B_1)) 
-
-plt.imshow(Y_wood , cmap = "gray")
-# print(Y_wood.shape)
 
 # pattern for aproximation and exact adder
 energy_consumption_list = []
@@ -44,7 +22,6 @@ energy_consumption_list.append([828.43, 817.43, 775.39, 838.65, 852.77, 843.23, 
 energy_consumption_list.append([828.43, 817.43, 775.39, 838.65, 852.77, 843.23, 801.27, 852.65]) # exact Parallel [9]
 energy_consumption_list.append([2068.7, 1962.8, 1853.7, 1797.8, 1982.9, 1893.6, 1882, 1811.2]) # exact Semi Parallel [10]
 energy_consumption_list.append([696.69, 661.61, 641.48, 611.95, 642.26, 612.56, 581.57, 568.23]) # own Aprox [11]
-# energy_consumption_list.append([372.55, 316.45, 320.74, 308.92, 330.8, 279.65, 294.28, 243.13]) # own 3Memristors [12]
 energy_consumption_list.append([0, 0, 0, 0, 0, 0, 0, 0]) # C51 paper [13]
 
 
@@ -60,7 +37,6 @@ truthTable_s_list.append([1, 1, 1, 0, 0, 0, 0, 0]) # Semi Serial Aprox [8]
 truthTable_s_list.append([0, 1, 1, 0, 1, 0, 0, 1]) # exact parallel [9]
 truthTable_s_list.append([0, 1, 1, 0, 1, 0, 0, 1]) # exact Semi Parallel [10]
 truthTable_s_list.append([1, 1, 1, 1, 1, 1, 0, 1]) # own Aprox [11]
-# truthTable_s_list.append([1, 1, 1, 0, 1, 1, 1, 1]) # own 3Memristors [12]
 truthTable_s_list.append([1, 1, 1, 0, 0, 0, 0, 0]) # C51 paper [13]
 
 
@@ -76,7 +52,6 @@ truthTable_c_list.append([0, 0, 0, 1, 1, 1, 1, 1]) # Serial Aprox [8]
 truthTable_c_list.append([0, 0, 0, 1, 0, 1, 1, 1]) # exact parallel [9]
 truthTable_c_list.append([0, 0, 0, 1, 0, 1, 1, 1]) # exact Semi Parallel [10]
 truthTable_c_list.append([0, 1, 0, 1, 0, 1, 1, 1]) # own Aprox [11]
-# truthTable_c_list.append([0, 1, 0, 1, 0, 1, 0, 1]) # own 3Memristors [12]
 truthTable_c_list.append([0, 0, 0, 1, 1, 1, 1, 1]) # C51 paper [13]
 
 nameApprox_list = []
@@ -91,7 +66,6 @@ nameApprox_list.append("Serial Aprox [8]")
 nameApprox_list.append("exact parallel [9]")
 nameApprox_list.append("exact Semi Parallel [10]")
 nameApprox_list.append("own Aprox [11]")
-# nameApprox_list.append("own 3Memristors [12]")
 nameApprox_list.append("C51 paper [13]")
 
 edgeDetectionKernel = np.array([[0,-1,0],[-1,4,-1],[0,-1,0]])
@@ -102,26 +76,18 @@ kernel_list.append(blurrKernel)
 kernel_list.append(edgeDetectionKernel)
 
 kernelname_list = []
-kernelname_list.append("edge Detection")
 kernelname_list.append("blurring")
+kernelname_list.append("edge Detection")
 
 # write data to json file
 # Create a dictionary to hold the parsed data
 loaded_dict = {}
-empty_list = [0,0,0, 0,0,0, 0,0,0]
 
 # Populate the dictionary
 for i, name in enumerate(nameApprox_list):
-    loaded_dict[name] = {"s": truthTable_s_list[i], "c": truthTable_c_list[i], "energy": energy_consumption_list[i], "ssi": empty_list, "psnr": empty_list, "energy_con": empty_list}
+    loaded_dict[name] = {"s": truthTable_s_list[i], "c": truthTable_c_list[i], "energy": energy_consumption_list[i], "ssi": list(), "psnr": list(), "energy_con": list()}
 
-json_file_path = 'data.json'
 
-# Write the data to the JSON file
-with open(json_file_path, 'w') as json_file:
-    json.dump(loaded_dict, json_file, indent=4)
-
-# assign the correct values for carry sum and energy acccording to choosen Algorithm
-    
 def Adder(a, b, c, approxAlgo = "exact Semi Parallel [10]"):
     if a==0 and b==0 and c==0:
         s = loaded_dict[approxAlgo]["s"][0]
@@ -180,7 +146,7 @@ def My_Multiplier(a,b, approxAlgo, approxBit, blurrFlag):
             res, e  = MyNbitAdder(a=res, b=multiplier, Algo=approxAlgo, Bit=approxBit)
             energy += e
     else:
-        res = a*b
+        res = a * b
     if blurrFlag == True:
         res = res >> 4
     return res, energy
@@ -197,25 +163,35 @@ def My_Mult(a, b, approxAlgo, approxBit, blurrFlag):
     return res, energy
 
 # Convolution
-def MyconvLUT(a, b, aproxAlgo, approxBit, blurrFlag, demoDataFlag):
-    if demoDataFlag:
-        return a, 1000000
-    a = a.astype(int)
-    b = b.astype(int)
-    a_shape = np.shape(a)
-    b_shape = np.shape(b)
-    res_shape1 = np.abs(a_shape[0] - b_shape[0]) + 1
-    res_shape2 = np.abs(a_shape[1] - b_shape[1]) + 1
+def MyconvLUT(image, kernel, approxAlgo, approxBit, blurrFlag):
+    image = np.array(image).astype(int)
+    x,y = image.shape
+    k,l = kernel.shape
+    # print(x,y)
+    resmatrix = 0
+
+    image = np.pad(image, ((k // 2, k // 2),(l // 2, l // 2)), mode = "constant")
+    image_shape = np.shape(image)
+    kernel_shape = np.shape(kernel)
+
+    res_shape1 = np.abs(image_shape[0] - kernel_shape[0]) + 1
+    res_shape2 = np.abs(image_shape[1] - kernel_shape[1]) + 1
 
     res = np.zeros((res_shape1, res_shape2))
     energy = 0
-    for i in range(res_shape1):
-        # print(f'row {i} of {res_shape1}')
-        for j in range(res_shape2):
-            resmatrix, ee = My_Mult(a=np.flip(b), b=a[i:i + b_shape[0], j:j + b_shape[1]], approxAlgo=aproxAlgo, approxBit=approxBit, blurrFlag=blurrFlag)                   
+    for i in range(y):
+        for j in range(x):
+            resmatrix, ee = My_Mult(a=np.flip(kernel), b=image[i:i + kernel_shape[0], j:j + kernel_shape[1]], approxAlgo=approxAlgo, approxBit=approxBit, blurrFlag=blurrFlag)
+            # multcheck = np.array_equal(np.multiply(np.flip(kernel*1/16), image[i:i + kernel_shape[0], j:j + kernel_shape[1]]), resmatrix)
+            # print(f'multcheck {multcheck}')
+            # if not multcheck:
+            #     print(f'fehler mult check mult: {multcheck} res: \n{resmatrix} \nexact: \n{np.multiply(np.flip(kernel*1/16), image[i:i + kernel_shape[0], j:j + kernel_shape[1]])}')
+
             res[i, j], e = MySum(matrix=resmatrix, approxAlgo=approxAlgo, approxBit=approxBit)
-            energy += ee 
-            energy += e
+            # check = np.sum(np.flip(kernel*1/16)*image[i:i + kernel_shape[0], j:j + kernel_shape[1]])
+            # if res[i,j] != check:
+            #     print(f'fehler sum check: {check} res:{res[i,j]}')
+            energy = energy + ee + e
     return res, energy
 
 def MySum(matrix, approxAlgo, approxBit):
@@ -279,7 +255,7 @@ def MyNbitAdder(a, b, Algo, Bit):
                 sum_element, carry_over, energy = Adder(a=int(bit1), b=int(bit2), c=int(carry_over), approxAlgo=Algo) 
             else:
                 #use exact_adder
-                    sum_element, carry_over, energy = Adder(a=int(bit1), b=int(bit2), c=int(carry_over))    
+                sum_element, carry_over, energy = Adder(a=int(bit1), b=int(bit2), c=int(carry_over))    
             
             sum_list.append(int(sum_element))
             total_energy += energy
@@ -295,7 +271,6 @@ def MyNbitAdder(a, b, Algo, Bit):
             sum_list.append(int(carry_over))
             total_sum = binary2Decimal(sum_list)
             total_sum = total_sum * (-1)
-
         return total_sum, total_energy #total energy in pJ!
     except Exception as e:
         print(f'Error: {e}')
@@ -336,8 +311,6 @@ def binary2Decimal(bitlist):
     decimal_number = int(bitstring, 2)
     return decimal_number
 
-add_approx_list = []
-total_energy_lsit = []
 
 def checkFilePresent(name):
     if os.path.isfile(f'{name}.png'):
@@ -345,36 +318,90 @@ def checkFilePresent(name):
     else: 
         return False
 
-for kernel, kernel_name in zip(kernel_list, kernelname_list):
-    # loop throw all Bitpositions 
-    for approxAlgo in algo_list:
-        # loop throw all Algorithm
-        for approxBit in bit_list:
-            approx_pic = 0
-            approx_pic_x = 0
-            approx_pic_y = 0
-            print(f'kernel: {kernel_name} Algo: {approxAlgo} Bit: {approxBit}')
-            if not calcAllNewFlag:
-                if checkFilePresent(f'data_{kernel_name}/outputimage_{approxAlgo}_{approxBit}'):
-                # if checkFilePresent(f'data/outputimage_{approxAlgo}_{approxBit}'):
+def main():
+    rows = 8
+    bit_list = range(0,rows)
+
+    path = ''
+    # path = 'final_project/image_processing/'
+
+    # algo_list = ["own Aprox [11]","C51 paper [13]","exact Serial [1]","Serial Aprox [2]", "SIAFA 1 [3]","SIAFA 2 [4]","SIAFA 3 [5]","SIAFA 4 [6]","exact Semi Serial [7]","Serial Aprox [8]", "exact parallel [9]","exact Semi Parallel [10]"]
+    algo_list = ["own Aprox [11]","C51 paper [13]","exact Serial [1]","Serial Aprox [2]", "SIAFA 1 [3]","SIAFA 2 [4]","SIAFA 3 [5]","SIAFA 4 [6]","exact Semi Serial [7]","Serial Aprox [8]", "exact parallel [9]","exact Semi Parallel [10]"]
+
+    calcAllNewFlag = True 
+    ###################################
+
+    # cam_img = io.imread("resources/cameraman.jpg")
+    cam_img = io.imread(f"{path}resources/cameraman.jpg", )
+
+    R_1 = cam_img[:, :, 0] 
+    G_1 = cam_img[:, :, 1]
+    B_1 = cam_img[:, :, 2]
+
+    #formula for converting colour(RGB) to Gray Image scale Image
+    Y_cam = (0.299 * np.array(R_1)) + (0.587 * np.array(G_1)) + (0.114 * np.array(B_1)) 
+    Y_cam_int = Y_cam.astype(int)
+
+    plt.imshow(Y_cam_int , cmap = "gray")
+
+    # assign the correct values for carry sum and energy acccording to choosen Algorithm
+        
+    for kernel, kernel_name in zip(kernel_list, kernelname_list):
+        
+        if kernel_name == "blurring":
+            blurrFlag = True
+        else:
+            blurrFlag = False
+        # exactconv = signal.convolve2d(Y_cam_int, kernel*1/16, mode = "same")
+        exact_ownconv, total_energy = MyconvLUT(image=Y_cam_int, 
+                                                    kernel=kernel, 
+                                                    approxAlgo="exact Semi Parallel [10]", 
+                                                    approxBit=0, 
+                                                    blurrFlag=blurrFlag)
+
+        # np.save(f'data_{kernel_name}/exact.npy', exact_ownconv)
+        np.save(f'{path}data_{kernel_name}/exact.npy', exact_ownconv)
+        
+        # plt.imsave(f'data_{kernel_name}/exact.png', exact_ownconv, cmap='gray')
+        plt.imsave(f'{path}data_{kernel_name}/exact.png', exact_ownconv, cmap='gray')
+        # loop throw all Bitpositions 
+        for approxAlgo in algo_list:
+            # loop throw all Algorithm
+            for approxBit in bit_list:
+
+                if approxBit >= 1 and 'exact' in approxAlgo:
                     continue
-            if kernel_name == "blurring":
-                blurrFlag = True
-            else:
-                blurrFlag = False
-           
-            approx_pic, total_energy = MyconvLUT(a=Y_wood, 
-                                                 b=kernel, 
-                                                 aproxAlgo=approxAlgo, 
-                                                 approxBit=approxBit, 
-                                                 demoDataFlag=demoDataFlag, 
-                                                 blurrFlag=blurrFlag)
 
-            np.save(f'data_{kernel_name}/outputimage_{approxAlgo}_{approxBit}.npy', approx_pic)
-            plt.imsave(f'data_{kernel_name}/outputimage_{approxAlgo}_{approxBit}.png', approx_pic, cmap='gray')
-            # plt.imsave(f'data/outputimage_{approxAlgo}_{approxBit}.png', approx_pic, cmap='gray')
+                approx_pic = 0
+                print(f'kernel: {kernel_name} Algo: {approxAlgo} Bit: {approxBit}')
+                if not calcAllNewFlag:
+                    if checkFilePresent(f'{path}data_{kernel_name}/outputimage_{approxAlgo}_{approxBit}'):
+                    # if checkFilePresent(f'data/outputimage_{approxAlgo}_{approxBit}'):
+                        continue
+                
 
-            with open(f'data_{kernel_name}/{approxAlgo}_{approxBit}.json', 'w') as json_file:
-            # with open(f'data/{approxAlgo}_{approxBit}.json', 'w') as json_file:
-                json.dump(total_energy, json_file, indent=4)
+                approx_pic, total_energy = MyconvLUT(image=Y_cam_int, 
+                                                    kernel=kernel, 
+                                                    approxAlgo=approxAlgo, 
+                                                    approxBit=approxBit, 
+                                                    blurrFlag=blurrFlag)
+                try:
+                    data_range = approx_pic.max() - approx_pic.min()
+                    loaded_dict[approxAlgo]["ssi"].append(ssim(exact_ownconv, approx_pic, data_range=data_range))
+                    loaded_dict[approxAlgo]["psnr"].append(psnr(exact_ownconv, approx_pic, data_range=data_range))
+                    loaded_dict[approxAlgo]["energy_con"].append(total_energy)
+                except Exception as e:
+                    print(f'error {e}')
+                else:
+                    print(f'psnr: {loaded_dict[approxAlgo]["psnr"][approxBit]} ssim: {loaded_dict[approxAlgo]["ssi"][approxBit]}')
+
+                np.save(f'{path}data_{kernel_name}/outputimage_{approxAlgo}_{approxBit}.npy', approx_pic)
+                plt.imsave(f'{path}data_{kernel_name}/outputimage_{approxAlgo}_{approxBit}.png', approx_pic, cmap='gray')
+                
+                # Write the data to the JSON file
+                with open(f'{path}results.json', 'w') as json_file:
+                    json.dump(loaded_dict, json_file, indent=4)
+
+if __name__ == "__main__":
+    main()
 
