@@ -94,6 +94,7 @@ for j, kernel in enumerate(kernelname_list):
         results_dict[kernel][name] = {"ssi": list(), "psnr": list(), "energy_con": list()}
 
 def Adder(a, b, c, approxAlgo = "exact Semi Parallel [10]"):
+    global loaded_dict
     if a==0 and b==0 and c==0:
         s = loaded_dict[approxAlgo]["s"][0]
         c_out = loaded_dict[approxAlgo]["c"][0]
@@ -131,24 +132,25 @@ def Adder(a, b, c, approxAlgo = "exact Semi Parallel [10]"):
 def My_Multiplier(a,b, approxAlgo, approxBit, blurrFlag):
     energy = 0
     res = 0
-    if a < -1 and a > 1 and b < -1 and b > 1:
+
+    if (a < -1 or a > 1) and (b < -1 or b > 1):
 
         a_wo_sign = abs(a)
         b_wo_sign = abs(b)
 
         if a_wo_sign > b_wo_sign:
-            multcount = a
-            multiplier = b
-        else: 
             multcount = b
             multiplier = a
+        else: 
+            multcount = a
+            multiplier = b
 
         if multcount < 0:
             multcount = multcount * (-1)
             multiplier = multiplier * (-1)
         
         for i in range(0, multcount):
-            res, e  = MyNbitAdder(a=res, b=multiplier, Algo=approxAlgo, Bit=approxBit)
+            res, e  = MyNbitAdder(a=res, b=multiplier, Algo=approxAlgo, approx_until=approxBit)
             energy += e
     else:
         res = a * b
@@ -205,12 +207,12 @@ def MySum(matrix, approxAlgo, approxBit):
     for i in range(matrix.shape[0]):
         for j in range(matrix.shape[1]):
             # print(f'{res}, {int(matrix[i,j])}, {approxAlgo}, {approxBit} ')
-            res, e = MyNbitAdder(a=res, b=int(matrix[i,j]), Algo=approxAlgo, Bit=approxBit)
+            res, e = MyNbitAdder(a=res, b=int(matrix[i,j]), Algo=approxAlgo, approx_until=approxBit)
         energy += e
     return res, energy
 
 #In 8 bit adder, lower 3 bits are implemented with approximate adder and rest of the with exact adder
-def MyNbitAdder(a, b, Algo, Bit):
+def MyNbitAdder(a, b, Algo, approx_until):
     try:
         #convert to binary and cut off the first two indices (they dont belong to the number but indicate that it is binary)
         minusABFlag = False
@@ -249,9 +251,7 @@ def MyNbitAdder(a, b, Algo, Bit):
         carry_over  = 0
         total_sum   = 0
         total_energy = 0
-        #############################################
-        approx_until = Bit #change this if u want to approximate the first bits by an approximate adder
-        #############################################
+        
         sum_list = []
         #we want to do a bitwise addition
         for index, (bit1, bit2) in enumerate(zip(rev_a, rev_b) ):
@@ -324,6 +324,7 @@ def checkFilePresent(name):
         return False
 
 def main():
+    global path
     rows = 8
     bit_list = range(0,rows)
 
@@ -334,7 +335,6 @@ def main():
     algo_list = ["own Aprox [11]","C51 paper [13]","exact Serial [1]","Serial Aprox [2]", "SIAFA 1 [3]","SIAFA 2 [4]","SIAFA 3 [5]","SIAFA 4 [6]","exact Semi Serial [7]","Serial Aprox [8]", "exact parallel [9]","exact Semi Parallel [10]"]
 
     calcAllNewFlag = True 
-    ###################################
 
     # cam_img = io.imread("resources/cameraman.jpg")
     cam_img = io.imread(f"{path}resources/cameraman.jpg", )
@@ -357,18 +357,18 @@ def main():
             blurrFlag = True
         else:
             blurrFlag = False
-        # exactconv = signal.convolve2d(Y_cam_int, kernel*1/16, mode = "same")
-        exact_ownconv, total_energy = MyconvLUT(image=Y_cam_int, 
-                                                    kernel=kernel, 
-                                                    approxAlgo="exact Semi Parallel [10]", 
-                                                    approxBit=0, 
-                                                    blurrFlag=blurrFlag)
+        exactconv = signal.convolve2d(Y_cam_int, kernel*1/16, mode = "same")
+        # exact_ownconv, total_energy = MyconvLUT(image=Y_cam_int, 
+                                                    # kernel=kernel, 
+                                                    # approxAlgo="exact Semi Parallel [10]", 
+                                                    # approxBit=0, 
+                                                    # blurrFlag=blurrFlag)
 
         # np.save(f'data_{kernel_name}/exact.npy', exact_ownconv)
-        np.save(f'{path}data_{kernel_name}/exact.npy', exact_ownconv)
+        np.save(f'{path}data_{kernel_name}/exact.npy', exactconv)
         
         # plt.imsave(f'data_{kernel_name}/exact.png', exact_ownconv, cmap='gray')
-        plt.imsave(f'{path}data_{kernel_name}/exact.png', exact_ownconv, cmap='gray')
+        plt.imsave(f'{path}data_{kernel_name}/exact.png', exactconv, cmap='gray')
         # loop throw all Bitpositions 
         for approxAlgo in algo_list:
             # loop throw all Algorithm
@@ -392,8 +392,8 @@ def main():
                                                     blurrFlag=blurrFlag)
                 try:
                     data_range = approx_pic.max() - approx_pic.min()
-                    results_dict[kernel_name][approxAlgo]["ssi"].append(ssim(exact_ownconv, approx_pic, data_range=data_range))
-                    results_dict[kernel_name][approxAlgo]["psnr"].append(psnr(exact_ownconv, approx_pic, data_range=data_range))
+                    results_dict[kernel_name][approxAlgo]["ssi"].append(ssim(exactconv, approx_pic, data_range=data_range))
+                    results_dict[kernel_name][approxAlgo]["psnr"].append(psnr(exactconv, approx_pic, data_range=data_range))
                     results_dict[kernel_name][approxAlgo]["energy_con"].append(total_energy)
                 except Exception as e:
                     print(f'error {e}')
@@ -407,6 +407,50 @@ def main():
                 with open(f'{path}results.json', 'w') as json_file:
                     json.dump(results_dict, json_file, indent=4)
 
+def test(kernelname):
+    testimage = np.array([
+        [0,0,0,0,0,0,0,0,0],
+        [0,255,255,255,0,0,0,0,0],
+        [0,255,255,255,0,0,0,0,0],
+        [0,255,255,255,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,1,1,1,0],
+        [0,0,0,0,0,1,1,1,0],
+        [0,0,0,0,0,1,1,1,0],
+        [0,0,0,0,0,0,0,0,0]
+        ])
+
+    print(testimage.shape)
+
+    algo_list = ["own Aprox [11]"]
+
+    for algo in algo_list:
+        for bit in range(0,8):
+            if kernelname == 'blurring':
+                exact = signal.convolve2d(testimage, blurrKernel*1/16, mode = "same")
+            else:
+                exact = signal.convolve2d(testimage, edgeDetectionKernel, mode = "same")
+
+            exact = exact.astype(int)
+            print(exact)
+            print('\n')
+
+            if kernelname == 'blurring':
+                exactconv,_ = MyconvLUT(kernel=edgeDetectionKernel, image=testimage,approxBit=bit, blurrFlag=False, approxAlgo=algo)
+            else:
+                exactconv,_ = MyconvLUT(kernel=blurrKernel, image=testimage,approxBit=bit, blurrFlag=True, approxAlgo=algo)
+
+            exactconv = exactconv.astype(int)
+            print(exactconv)
+            datarange = exactconv.max() - exactconv.min()
+            print(f'algo: {algo} Bit: {bit} psnr: {psnr(exact, exactconv, data_range=datarange)} ssim: {ssim(exact, exactconv, data_range=datarange)}')
+
+
 if __name__ == "__main__":
+    path = ''
+    # path = 'final_project/image_processing/'
+
     main()
 
+    # test('blurring')
+    # test('edge Detection')
