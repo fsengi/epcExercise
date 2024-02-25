@@ -54,6 +54,21 @@ truthTable_c_list.append([0, 0, 0, 1, 0, 1, 1, 1]) # exact Semi Parallel [10]
 truthTable_c_list.append([0, 1, 0, 1, 0, 1, 1, 1]) # own Aprox [11]
 truthTable_c_list.append([0, 0, 0, 1, 1, 1, 1, 1]) # C51 paper [13]
 
+
+truthTable_steps_list = []
+truthTable_steps_list.append(22) # exact Serial [1]
+truthTable_steps_list.append(8) # Serial Aprox [2]
+truthTable_steps_list.append(8) # SIAFA 1 [3]
+truthTable_steps_list.append(10) # SIAFA 2 [4]
+truthTable_steps_list.append(8) # SIAFA 3 [5]
+truthTable_steps_list.append(8) # SIAFA 4 [6]
+truthTable_steps_list.append(10) # exact Semi Serial [7]
+truthTable_steps_list.append(5) # Semi Serial Aprox [8]
+truthTable_steps_list.append(5) # exact parallel [9]
+truthTable_steps_list.append(17) # exact Semi Parallel [10]
+truthTable_steps_list.append(5) # own Aprox [11]
+truthTable_steps_list.append(10) # C51 paper [13]
+
 nameApprox_list = []
 nameApprox_list.append("exact Serial [1]")
 nameApprox_list.append("Serial Aprox [2]")
@@ -68,16 +83,16 @@ nameApprox_list.append("exact Semi Parallel [10]")
 nameApprox_list.append("own Aprox [11]")
 nameApprox_list.append("C51 paper [13]")
 
-edgeDetectionKernel = np.array([[0,-1,0],[-1,4,-1],[0,-1,0]])
+edgeDetectionKernel = np.array([[1,2,1],[0,0,0],[-1,-2,-1]])
 blurrKernel = np.array([[1,2,1],[2,4,2],[1,2,1]])
 
 kernel_list = []
-kernel_list.append(blurrKernel)
 kernel_list.append(edgeDetectionKernel)
+kernel_list.append(blurrKernel)
 
 kernelname_list = []
-kernelname_list.append("blurring")
 kernelname_list.append("edge Detection")
+kernelname_list.append("blurring")
 
 # write data to json file
 # Create a dictionary to hold the parsed data
@@ -86,12 +101,12 @@ results_dict = {}
 
 # Populate the dictionary
 for i, name in enumerate(nameApprox_list):
-    loaded_dict[name] = {"s": truthTable_s_list[i], "c": truthTable_c_list[i], "energy": energy_consumption_list[i]}
+    loaded_dict[name] = {"s": truthTable_s_list[i], "c": truthTable_c_list[i], "energy": energy_consumption_list[i], "steps": truthTable_steps_list[i]}
 
 for j, kernel in enumerate(kernelname_list):
     results_dict[kernel] = {}
     for i, name in enumerate(nameApprox_list):
-        results_dict[kernel][name] = {"ssi": list(), "psnr": list(), "energy_con": list()}
+        results_dict[kernel][name] = {"ssi": list(), "psnr": list(), "energy_con": list(), "steps": list()}
 
 def Adder(a, b, c, approxAlgo = "exact Semi Parallel [10]"):
     global loaded_dict
@@ -99,39 +114,48 @@ def Adder(a, b, c, approxAlgo = "exact Semi Parallel [10]"):
         s = loaded_dict[approxAlgo]["s"][0]
         c_out = loaded_dict[approxAlgo]["c"][0]
         energy_consumption = loaded_dict[approxAlgo]["energy"][0]
+        step = loaded_dict[approxAlgo]["steps"]
     elif a==0 and b==0 and c==1:
         s = loaded_dict[approxAlgo]["s"][1]
         c_out = loaded_dict[approxAlgo]["c"][1]
         energy_consumption = loaded_dict[approxAlgo]["energy"][1]
+        step = loaded_dict[approxAlgo]["steps"]
     elif a==0 and b==1 and c==0:
         s = loaded_dict[approxAlgo]["s"][2]
         c_out = loaded_dict[approxAlgo]["c"][2]
         energy_consumption = loaded_dict[approxAlgo]["energy"][2]
+        step = loaded_dict[approxAlgo]["steps"]
     elif a==0 and b==1 and c==1:
         s = loaded_dict[approxAlgo]["s"][3]
         c_out = loaded_dict[approxAlgo]["c"][3]
         energy_consumption = loaded_dict[approxAlgo]["energy"][3]
+        step = loaded_dict[approxAlgo]["steps"]
     elif a==1 and b==0 and c==0:
         s = loaded_dict[approxAlgo]["s"][4]
         c_out = loaded_dict[approxAlgo]["c"][4]
         energy_consumption = loaded_dict[approxAlgo]["energy"][4]
+        step = loaded_dict[approxAlgo]["steps"]
     elif a==1 and b==0 and c==1:
         s = loaded_dict[approxAlgo]["s"][5]
         c_out = loaded_dict[approxAlgo]["c"][5]
         energy_consumption = loaded_dict[approxAlgo]["energy"][5]
+        step = loaded_dict[approxAlgo]["steps"]
     elif a==1 and b==1 and c==0:
         s = loaded_dict[approxAlgo]["s"][6]
         c_out = loaded_dict[approxAlgo]["c"][6]
         energy_consumption = loaded_dict[approxAlgo]["energy"][6]
+        step = loaded_dict[approxAlgo]["steps"]
     elif a==1 and b==1 and c==1:
         s = loaded_dict[approxAlgo]["s"][7]
         c_out = loaded_dict[approxAlgo]["c"][7]
         energy_consumption = loaded_dict[approxAlgo]["energy"][7]
-    return s, c_out, energy_consumption
+        step = loaded_dict[approxAlgo]["steps"]
+    return s, c_out, energy_consumption, step
 
 def My_Multiplier(a,b, approxAlgo, approxBit, blurrFlag):
     energy = 0
     res = 0
+    steps = 0
 
     if (a < -1 or a > 1) and (b < -1 or b > 1):
 
@@ -150,24 +174,27 @@ def My_Multiplier(a,b, approxAlgo, approxBit, blurrFlag):
             multiplier = multiplier * (-1)
         
         for i in range(0, multcount):
-            res, e  = MyNbitAdder(a=res, b=multiplier, Algo=approxAlgo, approx_until=approxBit)
+            res, e, step  = MyNbitAdder(a=res, b=multiplier, Algo=approxAlgo, approx_until=approxBit)
             energy += e
+            steps += step
     else:
         res = a * b
     if blurrFlag == True:
         res = res >> 4
-    return res, energy
+    return res, energy, steps
 
 def My_Mult(a, b, approxAlgo, approxBit, blurrFlag):
     '''go throw every pixel in 3x3 matrix'''
     energy = 0
+    steps = 0
     res = np.zeros((a.shape[0],a.shape[1]))
     for k in range(a.shape[0]):
         for l in range(a.shape[1]):
-            res[k,l], e = My_Multiplier(a=int(a[k,l]), b=int(b[k,l]), approxAlgo=approxAlgo, approxBit=approxBit, blurrFlag=blurrFlag)
+            res[k,l], e, step = My_Multiplier(a=int(a[k,l]), b=int(b[k,l]), approxAlgo=approxAlgo, approxBit=approxBit, blurrFlag=blurrFlag)
             # print(f'res:{res[k,l]}')
             energy += e
-    return res, energy
+            steps += step
+    return res, energy, steps
 
 # Convolution
 def MyconvLUT(image, kernel, approxAlgo, approxBit, blurrFlag):
@@ -186,30 +213,35 @@ def MyconvLUT(image, kernel, approxAlgo, approxBit, blurrFlag):
 
     res = np.zeros((res_shape1, res_shape2))
     energy = 0
+    steps = 0
     for i in range(y):
         for j in range(x):
-            resmatrix, ee = My_Mult(a=np.flip(kernel), b=image[i:i + kernel_shape[0], j:j + kernel_shape[1]], approxAlgo=approxAlgo, approxBit=approxBit, blurrFlag=blurrFlag)
+            resmatrix, ee, step1 = My_Mult(a=np.flip(kernel), b=image[i:i + kernel_shape[0], j:j + kernel_shape[1]], approxAlgo=approxAlgo, approxBit=approxBit, blurrFlag=blurrFlag)
             # multcheck = np.array_equal(np.multiply(np.flip(kernel*1/16), image[i:i + kernel_shape[0], j:j + kernel_shape[1]]), resmatrix)
             # print(f'multcheck {multcheck}')
             # if not multcheck:
             #     print(f'fehler mult check mult: {multcheck} res: \n{resmatrix} \nexact: \n{np.multiply(np.flip(kernel*1/16), image[i:i + kernel_shape[0], j:j + kernel_shape[1]])}')
 
-            res[i, j], e = MySum(matrix=resmatrix, approxAlgo=approxAlgo, approxBit=approxBit)
+            res[i, j], e, step2 = MySum(matrix=resmatrix, approxAlgo=approxAlgo, approxBit=approxBit)
             # check = np.sum(np.flip(kernel*1/16)*image[i:i + kernel_shape[0], j:j + kernel_shape[1]])
             # if res[i,j] != check:
             #     print(f'fehler sum check: {check} res:{res[i,j]}')
             energy = energy + ee + e
-    return res, energy
+            steps = steps + step1 + step2
+    return res, energy, steps
 
 def MySum(matrix, approxAlgo, approxBit):
     res = 0
     energy = 0
+    steps = 0
     for i in range(matrix.shape[0]):
         for j in range(matrix.shape[1]):
             # print(f'{res}, {int(matrix[i,j])}, {approxAlgo}, {approxBit} ')
-            res, e = MyNbitAdder(a=res, b=int(matrix[i,j]), Algo=approxAlgo, approx_until=approxBit)
-        energy += e
-    return res, energy
+            res, e, step = MyNbitAdder(a=res, b=int(matrix[i,j]), Algo=approxAlgo, approx_until=approxBit)
+            energy += e
+            steps += step
+
+    return res, energy, steps
 
 #In 8 bit adder, lower 3 bits are implemented with approximate adder and rest of the with exact adder
 def MyNbitAdder(a, b, Algo, approx_until):
@@ -251,19 +283,21 @@ def MyNbitAdder(a, b, Algo, approx_until):
         carry_over  = 0
         total_sum   = 0
         total_energy = 0
+        steps = 0
         
         sum_list = []
         #we want to do a bitwise addition
         for index, (bit1, bit2) in enumerate(zip(rev_a, rev_b) ):
             if index <= approx_until or 'exact' in Algo:
                 #use approx_adder
-                sum_element, carry_over, energy = Adder(a=int(bit1), b=int(bit2), c=int(carry_over), approxAlgo=Algo) 
+                sum_element, carry_over, energy, step = Adder(a=int(bit1), b=int(bit2), c=int(carry_over), approxAlgo=Algo) 
             else:
                 #use exact_adder
-                sum_element, carry_over, energy = Adder(a=int(bit1), b=int(bit2), c=int(carry_over))    
+                sum_element, carry_over, energy, step = Adder(a=int(bit1), b=int(bit2), c=int(carry_over))    
             
             sum_list.append(int(sum_element))
             total_energy += energy
+            steps += step
         
         if a+b < 0 and not minusABFlag:
             total_sum = twoComplement2Decimal(sum_list)
@@ -276,7 +310,7 @@ def MyNbitAdder(a, b, Algo, approx_until):
             sum_list.append(int(carry_over))
             total_sum = binary2Decimal(sum_list)
             total_sum = total_sum * (-1)
-        return total_sum, total_energy #total energy in pJ!
+        return total_sum, total_energy, steps #total energy in pJ!
     except Exception as e:
         print(f'Error: {e}')
 
@@ -323,20 +357,15 @@ def checkFilePresent(name):
     else: 
         return False
 
-def main():
-    global path
+def main(path):
     rows = 8
     bit_list = range(0,rows)
 
-    path = ''
-    # path = 'final_project/image_processing/'
-
-    # algo_list = ["own Aprox [11]","C51 paper [13]","exact Serial [1]","Serial Aprox [2]", "SIAFA 1 [3]","SIAFA 2 [4]","SIAFA 3 [5]","SIAFA 4 [6]","exact Semi Serial [7]","Serial Aprox [8]", "exact parallel [9]","exact Semi Parallel [10]"]
     algo_list = ["own Aprox [11]","C51 paper [13]","exact Serial [1]","Serial Aprox [2]", "SIAFA 1 [3]","SIAFA 2 [4]","SIAFA 3 [5]","SIAFA 4 [6]","exact Semi Serial [7]","Serial Aprox [8]", "exact parallel [9]","exact Semi Parallel [10]"]
+    # algo_list = ["own Aprox [11]"]
 
     calcAllNewFlag = True 
 
-    # cam_img = io.imread("resources/cameraman.jpg")
     cam_img = io.imread(f"{path}resources/cameraman.jpg", )
 
     R_1 = cam_img[:, :, 0] 
@@ -353,48 +382,43 @@ def main():
         
     for kernel, kernel_name in zip(kernel_list, kernelname_list):
         
-        if kernel_name == "blurring":
-            blurrFlag = True
-        else:
-            blurrFlag = False
-        exactconv = signal.convolve2d(Y_cam_int, kernel*1/16, mode = "same")
-        # exact_ownconv, total_energy = MyconvLUT(image=Y_cam_int, 
-                                                    # kernel=kernel, 
-                                                    # approxAlgo="exact Semi Parallel [10]", 
-                                                    # approxBit=0, 
-                                                    # blurrFlag=blurrFlag)
-
-        # np.save(f'data_{kernel_name}/exact.npy', exact_ownconv)
+        # if kernel_name == "blurring":
+        #     blurrFlag = True
+        #     exactconv = signal.convolve2d(Y_cam_int, kernel*1/16, mode = "same")
+        # else:
+        blurrFlag = False
+        exactconv = signal.convolve2d(Y_cam_int, kernel, mode = "same")
+        
         np.save(f'{path}data_{kernel_name}/exact.npy', exactconv)
         
-        # plt.imsave(f'data_{kernel_name}/exact.png', exact_ownconv, cmap='gray')
         plt.imsave(f'{path}data_{kernel_name}/exact.png', exactconv, cmap='gray')
         # loop throw all Bitpositions 
         for approxAlgo in algo_list:
             # loop throw all Algorithm
             for approxBit in bit_list:
+                approx_pic = 0
 
                 if approxBit >= 1 and 'exact' in approxAlgo:
                     continue
 
-                approx_pic = 0
                 print(f'kernel: {kernel_name} Algo: {approxAlgo} Bit: {approxBit}')
                 if not calcAllNewFlag:
                     if checkFilePresent(f'{path}data_{kernel_name}/outputimage_{approxAlgo}_{approxBit}'):
-                    # if checkFilePresent(f'data/outputimage_{approxAlgo}_{approxBit}'):
                         continue
                 
 
-                approx_pic, total_energy = MyconvLUT(image=Y_cam_int, 
+                approx_pic, total_energy, total_steps = MyconvLUT(image=Y_cam_int, 
                                                     kernel=kernel, 
                                                     approxAlgo=approxAlgo, 
                                                     approxBit=approxBit, 
                                                     blurrFlag=blurrFlag)
                 try:
                     data_range = approx_pic.max() - approx_pic.min()
+                    print(f'sum: {np.sum(exactconv-approx_pic)} mean: {np.mean(exactconv-approx_pic)}')
                     results_dict[kernel_name][approxAlgo]["ssi"].append(ssim(exactconv, approx_pic, data_range=data_range))
                     results_dict[kernel_name][approxAlgo]["psnr"].append(psnr(exactconv, approx_pic, data_range=data_range))
                     results_dict[kernel_name][approxAlgo]["energy_con"].append(total_energy)
+                    results_dict[kernel_name][approxAlgo]["steps"].append(total_steps)
                 except Exception as e:
                     print(f'error {e}')
                 else:
@@ -420,37 +444,48 @@ def test(kernelname):
         [0,0,0,0,0,0,0,0,0]
         ])
 
+    # testimage = np.zeros(shape=(9,9))
+
+    # for a in range(0,9):
+    #     for b in range(0,9):
+    #         testimage[a,b] = (a+1)*(b+1)
+
     print(testimage.shape)
 
     algo_list = ["own Aprox [11]"]
+    
 
     for algo in algo_list:
         for bit in range(0,8):
+
             if kernelname == 'blurring':
-                exact = signal.convolve2d(testimage, blurrKernel*1/16, mode = "same")
+                exact = signal.convolve2d(testimage, blurrKernel, mode = "same")
+                # exact,_ = MyconvLUT(kernel=blurrKernel, image=testimage,approxBit=bit, blurrFlag=False, approxAlgo="exact Serial [1]")
             else:
                 exact = signal.convolve2d(testimage, edgeDetectionKernel, mode = "same")
+                # exact,_ = MyconvLUT(kernel=edgeDetectionKernel, image=testimage,approxBit=bit, blurrFlag=False, approxAlgo="exact Serial [1]")
 
             exact = exact.astype(int)
-            print(exact)
-            print('\n')
+            # print(exact)
+            # print('\n')
 
             if kernelname == 'blurring':
-                exactconv,_ = MyconvLUT(kernel=edgeDetectionKernel, image=testimage,approxBit=bit, blurrFlag=False, approxAlgo=algo)
+                exactconv,_,_ = MyconvLUT(kernel=blurrKernel, image=testimage,approxBit=bit, blurrFlag=False, approxAlgo=algo)
             else:
-                exactconv,_ = MyconvLUT(kernel=blurrKernel, image=testimage,approxBit=bit, blurrFlag=True, approxAlgo=algo)
+                exactconv,_,_ = MyconvLUT(kernel=edgeDetectionKernel, image=testimage,approxBit=bit, blurrFlag=False, approxAlgo=algo)
 
             exactconv = exactconv.astype(int)
-            print(exactconv)
-            datarange = exactconv.max() - exactconv.min()
-            print(f'algo: {algo} Bit: {bit} psnr: {psnr(exact, exactconv, data_range=datarange)} ssim: {ssim(exact, exactconv, data_range=datarange)}')
+            # print(exactconv)
+            data_range = exactconv.max() - exactconv.min()
+            # datarange = exactconv.max() - exactconv.min()
+            print(f'kernel: {kernelname} algo: {algo} Bit: {bit} psnr: {round(psnr(exact, exactconv, data_range=data_range),2)} ssim: {round(ssim(exact, exactconv, data_range=data_range),2)}')
 
 
 if __name__ == "__main__":
     path = ''
     # path = 'final_project/image_processing/'
 
-    main()
+    main(path)
 
     # test('blurring')
     # test('edge Detection')
