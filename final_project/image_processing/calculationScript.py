@@ -1,3 +1,7 @@
+####################################
+# this script is used to calculate all the pictures 
+# it is based on lists, so new truthtables can be added and calculated fully automated on a server, big time saver
+####################################
 import os
 import json
 import math
@@ -7,7 +11,8 @@ from scipy import signal
 from skimage.metrics import structural_similarity as ssim
 from skimage.metrics import peak_signal_noise_ratio as psnr
 from skimage import io
-####################################
+
+
 
 # pattern for aproximation and exact adder
 energy_consumption_list = []
@@ -99,16 +104,20 @@ kernelname_list.append("blurring")
 loaded_dict = {}
 results_dict = {}
 
-# Populate the dictionary
+# Populate the dictionary for getting truth table data
 for i, name in enumerate(nameApprox_list):
     loaded_dict[name] = {"s": truthTable_s_list[i], "c": truthTable_c_list[i], "energy": energy_consumption_list[i], "steps": truthTable_steps_list[i]}
+
+# Populate the dictionary for quality metrics
 
 for j, kernel in enumerate(kernelname_list):
     results_dict[kernel] = {}
     for i, name in enumerate(nameApprox_list):
         results_dict[kernel][name] = {"ssi": list(), "psnr": list(), "energy_con": list(), "steps": list()}
 
+
 def Adder(a, b, c, approxAlgo = "exact Semi Parallel [10]"):
+    '''when no Algo is given use the base our approx is based on'''
     global loaded_dict
     if a==0 and b==0 and c==0:
         s = loaded_dict[approxAlgo]["s"][0]
@@ -153,6 +162,7 @@ def Adder(a, b, c, approxAlgo = "exact Semi Parallel [10]"):
     return s, c_out, energy_consumption, step
 
 def My_Multiplier(a,b, approxAlgo, approxBit, blurrFlag):
+    '''multiply two numbers reduce compuational effort for multiplication time 1 & -1'''
     energy = 0
     res = 0
     steps = 0
@@ -191,13 +201,13 @@ def My_Mult(a, b, approxAlgo, approxBit, blurrFlag):
     for k in range(a.shape[0]):
         for l in range(a.shape[1]):
             res[k,l], e, step = My_Multiplier(a=int(a[k,l]), b=int(b[k,l]), approxAlgo=approxAlgo, approxBit=approxBit, blurrFlag=blurrFlag)
-            # print(f'res:{res[k,l]}')
             energy += e
             steps += step
     return res, energy, steps
 
-# Convolution
+
 def MyconvLUT(image, kernel, approxAlgo, approxBit, blurrFlag):
+    '''do the convolution on image and kernel '''
     image = np.array(image).astype(int)
     x,y = image.shape
     k,l = kernel.shape
@@ -217,33 +227,24 @@ def MyconvLUT(image, kernel, approxAlgo, approxBit, blurrFlag):
     for i in range(y):
         for j in range(x):
             resmatrix, ee, step1 = My_Mult(a=np.flip(kernel), b=image[i:i + kernel_shape[0], j:j + kernel_shape[1]], approxAlgo=approxAlgo, approxBit=approxBit, blurrFlag=blurrFlag)
-            # multcheck = np.array_equal(np.multiply(np.flip(kernel*1/16), image[i:i + kernel_shape[0], j:j + kernel_shape[1]]), resmatrix)
-            # print(f'multcheck {multcheck}')
-            # if not multcheck:
-            #     print(f'fehler mult check mult: {multcheck} res: \n{resmatrix} \nexact: \n{np.multiply(np.flip(kernel*1/16), image[i:i + kernel_shape[0], j:j + kernel_shape[1]])}')
-
             res[i, j], e, step2 = MySum(matrix=resmatrix, approxAlgo=approxAlgo, approxBit=approxBit)
-            # check = np.sum(np.flip(kernel*1/16)*image[i:i + kernel_shape[0], j:j + kernel_shape[1]])
-            # if res[i,j] != check:
-            #     print(f'fehler sum check: {check} res:{res[i,j]}')
             energy = energy + ee + e
             steps = steps + step1 + step2
     return res, energy, steps
 
 def MySum(matrix, approxAlgo, approxBit):
+    '''sumreduction'''
     res = 0
     energy = 0
     steps = 0
     for i in range(matrix.shape[0]):
         for j in range(matrix.shape[1]):
-            # print(f'{res}, {int(matrix[i,j])}, {approxAlgo}, {approxBit} ')
             res, e, step = MyNbitAdder(a=res, b=int(matrix[i,j]), Algo=approxAlgo, approx_until=approxBit)
             energy += e
             steps += step
 
     return res, energy, steps
 
-#In 8 bit adder, lower 3 bits are implemented with approximate adder and rest of the with exact adder
 def MyNbitAdder(a, b, Algo, approx_until):
     try:
         #convert to binary and cut off the first two indices (they dont belong to the number but indicate that it is binary)
@@ -382,10 +383,6 @@ def main(path):
         
     for kernel, kernel_name in zip(kernel_list, kernelname_list):
         
-        # if kernel_name == "blurring":
-        #     blurrFlag = True
-        #     exactconv = signal.convolve2d(Y_cam_int, kernel*1/16, mode = "same")
-        # else:
         blurrFlag = False
         exactconv = signal.convolve2d(Y_cam_int, kernel, mode = "same")
         
